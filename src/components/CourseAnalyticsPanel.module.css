@@ -1,0 +1,271 @@
+.panel {
+  margin-top: 1rem;
+  overflow: hidden;
+  border: 1px solid rgb(125 211 252 / 12%);
+  border-radius: 0.875rem;
+  background:
+    radial-gradient(ellipse at top right, rgb(56 189 248 / 8%), transparent 48%),
+    #101827;
+  padding: 1.125rem;
+}
+
+.header,
+.heading,
+.refreshButton,
+.chartHeading {
+  display: flex;
+  align-items: center;
+}
+
+.header {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.heading {
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.headingIcon,
+.metricIcon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.625rem;
+}
+
+.headingIcon {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: rgb(56 189 248 / 11%);
+  color: #7dd3fc;
+}
+
+.title {
+  color: #f8fafc;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin-top: 0.25rem;
+  color: #64748b;
+  font-size: 0.625rem;
+}
+
+.refreshButton {
+  min-height: 2.25rem;
+  flex: 0 0 auto;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 0.5rem;
+  background: rgb(255 255 255 / 3%);
+  padding: 0.5rem 0.65rem;
+  color: #cbd5e1;
+  font-size: 0.625rem;
+  font-weight: 600;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.refreshButton:hover:not(:disabled) {
+  border-color: rgb(125 211 252 / 30%);
+  background: rgb(125 211 252 / 7%);
+  color: #bae6fd;
+}
+
+.refreshButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem;
+  margin-top: 1.125rem;
+}
+
+.metric {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.625rem;
+  border: 1px solid rgb(255 255 255 / 6%);
+  border-radius: 0.75rem;
+  background: rgb(7 13 24 / 35%);
+  padding: 0.75rem;
+}
+
+.metricIcon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.blue {
+  background: rgb(56 189 248 / 10%);
+  color: #7dd3fc;
+}
+
+.violet {
+  background: rgb(167 139 250 / 10%);
+  color: #c4b5fd;
+}
+
+.metricLabel {
+  color: #94a3b8;
+  font-size: 0.625rem;
+}
+
+.metricValue {
+  margin-top: 0.125rem;
+  color: #f8fafc;
+  font-family: "Manrope", sans-serif;
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.chart {
+  margin-top: 1.125rem;
+  border-top: 1px solid rgb(255 255 255 / 7%);
+  padding-top: 1rem;
+}
+
+.chartHeading {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.chartHeading h4 {
+  color: #e2e8f0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.chartHeading span {
+  color: #64748b;
+  font-size: 0.5625rem;
+}
+
+.bars {
+  display: flex;
+  min-height: 8rem;
+  align-items: stretch;
+  justify-content: space-around;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.barColumn {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.barValue,
+.barLabel {
+  color: #64748b;
+  font-size: 0.5625rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.barTrack {
+  display: flex;
+  width: min(100%, 2.25rem);
+  height: 5rem;
+  align-items: flex-end;
+  overflow: hidden;
+  border-radius: 0.375rem;
+  background: rgb(255 255 255 / 4%);
+}
+
+.bar {
+  width: 100%;
+  min-height: 0.125rem;
+  border-radius: 0.375rem 0.375rem 0 0;
+  background: linear-gradient(180deg, #7dd3fc, #2563eb);
+  transition: height 300ms ease;
+}
+
+.emptyChart,
+.status {
+  padding: 1.25rem 0;
+  color: #64748b;
+  font-size: 0.6875rem;
+  text-align: center;
+}
+
+.error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  border: 1px solid rgb(251 113 133 / 18%);
+  border-radius: 0.625rem;
+  background: rgb(251 113 133 / 5%);
+  padding: 0.75rem;
+  color: #fda4af;
+  font-size: 0.6875rem;
+}
+
+.error button {
+  border: 0;
+  background: transparent;
+  color: #bae6fd;
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.error button:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.refreshButton:focus-visible,
+.error button:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: 2px;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 420px) {
+  .panel {
+    padding: 0.875rem;
+  }
+
+  .metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .refreshButton span {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinning {
+    animation: none;
+  }
+
+  .bar {
+    transition: none;
+  }
+}
