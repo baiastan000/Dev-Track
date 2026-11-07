@@ -16,7 +16,7 @@ class User(AbstractUser):
         INSTRUCTOR = "instructor", "Instructor"
         ADMIN = "admin", "Admin"
 
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
     objects = UserManager()
 
