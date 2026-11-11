@@ -5,10 +5,7 @@ import CodeBlock from "../components/CodeBlock.jsx";
 import { getCourse, getTopic } from "../data/courses.js";
 import { getNextLessonStage, useLearningProgress } from "../context/ProgressContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-
-const baseTabs = [
-  { id: "theory", label: "Теория", icon: BookOpen },
-];
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 export default function TopicPage() {
   const { courseId, topicId } = useParams();
@@ -17,6 +14,7 @@ export default function TopicPage() {
   const topic = getTopic(courseId, topicId);
   const { progress, startTopic, completeLessonStage } = useLearningProgress();
   const { trackActivity } = useAuth();
+  const { t, topicTitle } = useLanguage();
   const [activeTab, setActiveTab] = useState("theory");
   const trackedTopicId = useRef("");
 
@@ -71,9 +69,9 @@ export default function TopicPage() {
   if (!course || !topic) {
     return (
       <section className="rounded-xl border border-white/[0.07] bg-[#101827] p-8 text-center">
-        <h2 className="font-display text-lg font-bold text-white">Тема не найдена</h2>
+        <h2 className="font-display text-lg font-bold text-white">{t("topic.notFound")}</h2>
         <Link to="/courses" className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-sky-300">
-          <ArrowLeft size={14} /> К списку курсов
+          <ArrowLeft size={14} /> {t("coursePage.backToCourses")}
         </Link>
       </section>
     );
@@ -87,10 +85,13 @@ export default function TopicPage() {
   const nextStage = getNextLessonStage(topic.id, progress);
   const completedStages = progress.lessonStages?.[topic.id] ?? [];
   const stageIndex = { theory: 0, examples: 1, task: 2 };
+  const courseTitleKey = `course.${course.id}.title`;
+  const courseTitle = t(courseTitleKey) === courseTitleKey ? course.title : t(courseTitleKey);
+  const duration = topic.duration.replace("мин", t("topic.minutes"));
   const tabs = [
-    ...baseTabs,
-    ...(topic.example ? [{ id: "examples", label: "Примеры", icon: Code2 }] : []),
-    ...(topic.task ? [{ id: "task", label: "Задание", icon: ListChecks }] : []),
+    { id: "theory", label: t("topic.theory"), icon: BookOpen },
+    ...(topic.example ? [{ id: "examples", label: t("topic.examples"), icon: Code2 }] : []),
+    ...(topic.task ? [{ id: "task", label: t("topic.task"), icon: ListChecks }] : []),
   ];
 
   function completeCurrentStage(stage, nextTab) {
@@ -105,21 +106,21 @@ export default function TopicPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <Link to={`/courses/${course.id}`} className="inline-flex items-center gap-2 text-[11px] font-medium text-slate-400 transition hover:text-white">
-        <ArrowLeft size={14} /> {course.title}
+        <ArrowLeft size={14} /> {courseTitle}
       </Link>
 
       <header className="mt-5 rounded-xl border border-white/[0.07] bg-[#101827] p-5 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-sky-300">{course.title} · ТЕМА {topicIndex + 1} ИЗ {course.topics.length}</p>
-            <h2 className="mt-2 font-display text-xl font-extrabold text-white sm:text-2xl">{topic.title}</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-sky-300">{t("topic.coursePosition").replace("{course}", courseTitle).replace("{index}", String(topicIndex + 1)).replace("{total}", String(course.topics.length))}</p>
+            <h2 className="mt-2 font-display text-xl font-extrabold text-white sm:text-2xl">{topicTitle(topic)}</h2>
             <p className="mt-2 text-[11px] text-slate-500">
-              {topic.duration} · {topic.task ? "теория, пример и практика" : "теория"}
+              {duration} · {topic.task ? t("topic.lessonParts") : t("topic.theory").toLocaleLowerCase()}
             </p>
           </div>
           {isComplete && (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/[0.07] px-3 py-1.5 text-[10px] font-semibold text-emerald-300">
-              <CheckCircle2 size={13} /> Пройдено
+              <CheckCircle2 size={13} /> {t("topic.completed")}
             </span>
           )}
         </div>
@@ -146,14 +147,14 @@ export default function TopicPage() {
       <section className="mt-4 rounded-xl border border-white/[0.07] bg-[#101827] p-5 sm:p-7">
         {activeTab === "theory" && (
           <div className="space-y-4">
-            <h3 className="font-display text-sm font-bold text-white">Разберём тему простыми словами</h3>
+            <h3 className="font-display text-sm font-bold text-white">{t("topic.explain")}</h3>
             {topic.theory.map((paragraph) => (
               <p key={paragraph} className="text-xs leading-7 text-slate-300">{paragraph}</p>
             ))}
             <div className="mt-5 rounded-lg border border-sky-300/10 bg-sky-300/[0.04] p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-300">Запомни</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-300">{t("topic.remember")}</p>
               <p className="mt-1.5 text-[11px] leading-5 text-slate-300">
-                Не обязательно запоминать всё сразу. Попробуй пример самостоятельно и возвращайся к теории по мере необходимости.
+                {t("topic.rememberNote")}
               </p>
             </div>
             <button
@@ -161,7 +162,7 @@ export default function TopicPage() {
               onClick={() => completeCurrentStage("theory", "examples")}
               className="inline-flex items-center gap-2 rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950 transition hover:bg-sky-300"
             >
-              <Check size={13} /> Теория изучена — к примеру
+              <Check size={13} /> {t("topic.theoryDone")}
             </button>
           </div>
         )}
@@ -170,18 +171,18 @@ export default function TopicPage() {
           <div>
             <div className="mb-3 flex items-center gap-2">
               <Code2 size={15} className="text-sky-300" />
-              <h3 className="font-display text-sm font-bold text-white">Пример кода</h3>
+              <h3 className="font-display text-sm font-bold text-white">{t("topic.codeExample")}</h3>
             </div>
             <CodeBlock code={topic.example} />
             <p className="mt-3 text-[10px] leading-5 text-slate-500">
-              Попробуй изменить пример и понаблюдать, как меняется его структура.
+              {t("topic.changeExample")}
             </p>
             <button
               type="button"
               onClick={() => completeCurrentStage("example", "task")}
               className="mt-3 inline-flex items-center gap-2 rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950 transition hover:bg-sky-300"
             >
-              <Check size={13} /> Пример изучен — к заданию
+              <Check size={13} /> {t("topic.exampleDone")}
             </button>
           </div>
         )}
@@ -190,18 +191,18 @@ export default function TopicPage() {
           <div>
             <div className="flex items-center gap-2">
               <ListChecks size={15} className="text-violet-300" />
-              <h3 className="font-display text-sm font-bold text-white">{topic.task.title}</h3>
+              <h3 className="font-display text-sm font-bold text-white">{topic.task.title.replace(topic.title, topicTitle(topic))}</h3>
             </div>
             <p className="mt-3 text-xs leading-6 text-slate-300">{topic.task.prompt}</p>
             <div className="mt-4">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Стартовый пример</p>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{t("topic.starterExample")}</p>
               <CodeBlock code={topic.task.starter} />
             </div>
             <Link
               to={`/tasks?topic=${topic.id}`}
               className="mt-4 inline-flex items-center gap-2 rounded-lg border border-sky-300/15 bg-sky-300/[0.06] px-3.5 py-2.5 text-[10px] font-semibold text-sky-200 transition hover:bg-sky-300/[0.12]"
             >
-              Открыть редактор задания <ArrowRight size={13} />
+              {t("topic.openEditor")} <ArrowRight size={13} />
             </Link>
           </div>
         )}
@@ -214,11 +215,11 @@ export default function TopicPage() {
           onClick={() => previousTopic && goToTopic(previousTopic)}
           className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] px-3.5 py-2.5 text-[10px] font-semibold text-slate-300 transition hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <ArrowLeft size={13} /> Предыдущая тема
+          <ArrowLeft size={13} /> {t("topic.previous")}
         </button>
         <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
           {isComplete ? <CheckCircle2 size={13} className="text-emerald-300" /> : <LockKeyhole size={12} />}
-          {isComplete ? "Все 3 этапа пройдены" : `Этап ${completedStages.length + 1} из 3`}
+          {isComplete ? t("topic.allStagesDone") : t("topic.stageProgress").replace("{current}", String(completedStages.length + 1))}
         </span>
         <button
           type="button"
@@ -226,7 +227,7 @@ export default function TopicPage() {
           onClick={() => nextTopic && goToTopic(nextTopic)}
           className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] px-3.5 py-2.5 text-[10px] font-semibold text-slate-300 transition hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Следующая тема <ArrowRight size={13} />
+          {t("topic.next")} <ArrowRight size={13} />
         </button>
       </div>
     </div>

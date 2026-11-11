@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useAcademy } from "../context/AcademyContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import PageBackLink from "../components/PageBackLink.jsx";
 import styles from "./AcademyPage.module.css";
 
 const localeTags = { kg: "ky-KG", ru: "ru-KG", en: "en-US" };
@@ -27,6 +28,7 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
+      <PageBackLink to="/courses" />
       <div className="mb-6">
         <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-slate-500">{t("header.cart")}</p>
         <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-white">{t("cart.title")}</h2>

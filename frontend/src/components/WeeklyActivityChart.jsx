@@ -1,7 +1,9 @@
 import { getRecentActivity } from "../context/ProgressContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 
 export default function WeeklyActivityChart({ activityDays }) {
-  const days = getRecentActivity(activityDays);
+  const { t, language } = useLanguage();
+  const days = getRecentActivity(activityDays, new Date(), language);
   const maxCount = Math.max(1, ...days.map((day) => day.count));
   const points = days.map((day, index) => {
     const x = 20 + index * 46.6;
@@ -17,7 +19,7 @@ export default function WeeklyActivityChart({ activityDays }) {
         <svg
           viewBox="0 0 320 110"
           role="img"
-          aria-label="График учебной активности за последние семь дней"
+          aria-label={t("statistics.activity")}
           className="h-36 w-full overflow-visible"
           preserveAspectRatio="none"
         >
@@ -39,7 +41,7 @@ export default function WeeklyActivityChart({ activityDays }) {
                 stroke={day.count ? "#0c1320" : "#475569"}
                 strokeWidth="2"
               >
-                <title>{`${day.label}: ${day.count} учебных действия`}</title>
+                <title>{t("statistics.chartTooltip").replace("{day}", day.label).replace("{count}", String(day.count))}</title>
               </circle>
             );
           })}
@@ -53,7 +55,7 @@ export default function WeeklyActivityChart({ activityDays }) {
         </div>
       </div>
       <p className="mt-2 text-[9px] leading-4 text-slate-500">
-        Учитываются дни, когда ты завершил тему или успешно выполнил задание.
+        {t("statistics.chartFootnote")}
       </p>
     </div>
   );

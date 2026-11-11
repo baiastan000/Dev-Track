@@ -1,18 +1,21 @@
 import { CalendarDays, Check, Circle, Target } from "lucide-react";
 import { courses } from "../data/courses.js";
 import { useLearningProgress } from "../context/ProgressContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
+import PageBackLink from "../components/PageBackLink.jsx";
 
 const goalOptions = [
-  { value: 3, label: "Спокойно", description: "3 учебных шага за неделю" },
-  { value: 5, label: "Уверенно", description: "5 учебных шагов за неделю" },
-  { value: 7, label: "Интенсивно", description: "7 учебных шагов за неделю" },
+  { value: 3, labelKey: "plan.easy", descriptionKey: "plan.easyDescription" },
+  { value: 5, labelKey: "plan.steady", descriptionKey: "plan.steadyDescription" },
+  { value: 7, labelKey: "plan.intensive", descriptionKey: "plan.intensiveDescription" },
 ];
 
-const weekdays = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
+const weekdayKeys = ["plan.monday", "plan.tuesday", "plan.wednesday", "plan.thursday", "plan.friday", "plan.saturday", "plan.sunday"];
 const studyTasks = courses.flatMap((course) =>
   course.topics.map((topic) => ({
     id: `weekly-${topic.id}`,
     topicId: topic.id,
+    topic,
     title: topic.title,
     courseTitle: course.title,
     duration: topic.duration,
@@ -22,6 +25,7 @@ const studyTasks = courses.flatMap((course) =>
 
 export default function LearningPlanPage() {
   const { progress, setWeeklyGoal, toggleWeeklyTask } = useLearningProgress();
+  const { t, topicTitle } = useLanguage();
   const goal = goalOptions.some((option) => option.value === progress.plan.goal)
     ? progress.plan.goal
     : 5;
@@ -33,18 +37,19 @@ export default function LearningPlanPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
+      <PageBackLink />
       <div className="mb-7">
-        <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-slate-500">ТВОЙ РИТМ ОБУЧЕНИЯ</p>
-        <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-white">План обучения</h2>
-        <p className="mt-2 text-xs text-slate-400">Выбери посильную цель и отмечай учебные шаги на этой неделе.</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-slate-500">{t("plan.eyebrow")}</p>
+        <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-white">{t("plan.title")}</h2>
+        <p className="mt-2 text-xs text-slate-400">{t("plan.description")}</p>
       </div>
 
       <section className="rounded-xl border border-white/[0.07] bg-[#101827] p-5 sm:p-6">
         <div className="flex items-start gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-sky-400/10 text-sky-300"><Target size={17} /></span>
           <div>
-            <h3 className="text-sm font-bold text-white">Выбери недельную цель</h3>
-            <p className="mt-1 text-[10px] text-slate-500">Цель можно изменить в любой момент.</p>
+            <h3 className="text-sm font-bold text-white">{t("plan.weeklyGoal")}</h3>
+            <p className="mt-1 text-[10px] text-slate-500">{t("plan.goalCanChange")}</p>
           </div>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -60,14 +65,14 @@ export default function LearningPlanPage() {
                   : "border-white/[0.07] bg-[#0b111c] hover:border-white/[0.14]"
               }`}
             >
-              <span className={`block text-xs font-semibold ${goal === option.value ? "text-sky-200" : "text-slate-200"}`}>{option.label}</span>
-              <span className="mt-1 block text-[10px] text-slate-500">{option.description}</span>
+              <span className={`block text-xs font-semibold ${goal === option.value ? "text-sky-200" : "text-slate-200"}`}>{t(option.labelKey)}</span>
+              <span className="mt-1 block text-[10px] text-slate-500">{t(option.descriptionKey)}</span>
             </button>
           ))}
         </div>
         <div className="mt-5">
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-slate-400">Прогресс недели</span>
+            <span className="text-slate-400">{t("plan.weekProgress")}</span>
             <span className="font-semibold text-sky-300">{completedCount} / {tasks.length}</span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
@@ -79,7 +84,7 @@ export default function LearningPlanPage() {
       <section className="mt-6">
         <div className="mb-3 flex items-center gap-2">
           <CalendarDays size={15} className="text-sky-300" />
-          <h3 className="font-display text-sm font-bold text-white">Задачи на неделю</h3>
+          <h3 className="font-display text-sm font-bold text-white">{t("plan.weekTasks")}</h3>
         </div>
         <div className="space-y-2">
           {tasks.length > 0 ? tasks.map((task, index) => {
@@ -98,21 +103,21 @@ export default function LearningPlanPage() {
                     {done ? <Check size={15} /> : <Circle size={14} />}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className={`block truncate text-[11px] font-semibold ${done ? "text-slate-400 line-through" : "text-slate-200"}`}>{task.title}</span>
+                    <span className={`block truncate text-[11px] font-semibold ${done ? "text-slate-400 line-through" : "text-slate-200"}`}>{topicTitle(task.topic)}</span>
                     <span className="mt-1 block text-[9px] text-slate-500">{task.courseTitle} · {task.duration}</span>
                   </span>
-                  <span className="hidden text-[9px] text-slate-500 sm:block">{weekdays[index]}</span>
+                  <span className="hidden text-[9px] text-slate-500 sm:block">{t(weekdayKeys[index])}</span>
                 </button>
               );
             }) : (
               <p className="rounded-xl border border-emerald-300/15 bg-emerald-300/[0.04] p-4 text-[11px] leading-5 text-emerald-200">
-                Все темы учебного плана уже пройдены. Отличный результат!
+                {t("plan.allDone")}
               </p>
             )}
         </div>
         {tasks.length > 0 && completedCount === tasks.length && (
           <p className="mt-4 rounded-lg border border-emerald-300/15 bg-emerald-300/[0.05] p-3 text-[10px] font-medium text-emerald-200">
-            Цель на неделю выполнена. Отличная работа!
+            {t("plan.goalDone")}
           </p>
         )}
       </section>

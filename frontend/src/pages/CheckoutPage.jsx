@@ -4,9 +4,11 @@ import { CheckCircle2 } from "lucide-react";
 import { useAcademy } from "../context/AcademyContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
+import PageBackLink from "../components/PageBackLink.jsx";
 import styles from "./AcademyPage.module.css";
 
 const localeTags = { kg: "ky-KG", ru: "ru-KG", en: "en-US" };
+const whatsAppPhone = import.meta.env.VITE_WHATSAPP_PHONE || "996501306654";
 
 function formatPrice(amount, language) {
   return new Intl.NumberFormat(localeTags[language], {
@@ -29,6 +31,18 @@ export default function CheckoutPage() {
     }))
     .filter((item) => item.course);
   const total = items.reduce((sum, item) => sum + item.course.price * item.quantity, 0);
+  const whatsAppText = savedOrder
+    ? [
+        t("checkout.whatsappMessage"),
+        `${t("checkout.name")}: ${savedOrder.customer.name}`,
+        `${t("checkout.email")}: ${savedOrder.customer.email}`,
+        `${t("cart.title")}:`,
+        ...savedOrder.items.map((item) => `${item.title} × ${item.quantity}`),
+        `${t("cart.subtotal")}: ${formatPrice(savedOrder.total, language)}`,
+        `${t("checkout.order")} ${savedOrder.id.slice(-8)}`,
+      ].join("\n")
+    : "";
+  const whatsAppUrl = `https://wa.me/${whatsAppPhone}?text=${encodeURIComponent(whatsAppText)}`;
 
   function submitOrder(event) {
     event.preventDefault();
@@ -63,6 +77,14 @@ export default function CheckoutPage() {
         <h2 className="mt-4 font-display text-xl font-extrabold text-white">{t("checkout.success")}</h2>
         <p className="mt-2 text-xs leading-5 text-slate-400">{t("checkout.successNote")}</p>
         <p className="mt-4 text-[10px] text-slate-500">{t("checkout.order")} {savedOrder.id.slice(-8)}</p>
+        <a
+          href={whatsAppUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 inline-flex rounded-lg bg-emerald-500 px-4 py-2.5 text-[10px] font-bold text-white transition hover:bg-emerald-400"
+        >
+          {t("checkout.whatsapp")}
+        </a>
         <Link to="/courses" className="mt-6 inline-flex rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950">
           {t("checkout.continue")}
         </Link>
@@ -84,6 +106,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
+      <PageBackLink to="/cart" />
       <div className="mb-6">
         <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-slate-500">{t("checkout.contact")}</p>
         <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-white">{t("checkout.title")}</h2>

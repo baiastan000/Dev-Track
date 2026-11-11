@@ -43,12 +43,12 @@ export default function Sidebar({ onNavigate }) {
       navigate("/");
       onNavigate?.();
     } catch (error) {
-      showAuthError(error.message || "Не удалось выйти из аккаунта.");
+      showAuthError(error.message || t("auth.signOutFailed"));
     }
   }
 
   return (
-    <aside className="sidebar flex h-full flex-col border-r border-white/[0.07] bg-[#0b111e]">
+    <aside className="sidebar flex h-screen flex-col overflow-y-auto scroll-smooth border-r border-white/[0.07] bg-[#0b111e]">
       <NavLink
         to="/dashboard"
         className="flex items-center gap-3 px-6 py-6"
@@ -120,7 +120,7 @@ export default function Sidebar({ onNavigate }) {
             </div>
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-slate-200">
-                {displayName || "Имя не указано"}
+                {displayName || t("header.profileMissing")}
               </p>
               <p className="text-[10px] text-slate-500">{t("nav.student")}</p>
             </div>

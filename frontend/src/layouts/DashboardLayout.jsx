@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, Search, ShoppingCart } from "lucide-react";
+import { Menu, ShoppingCart } from "lucide-react";
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar.jsx";
 import { useLearningProgress } from "../context/ProgressContext.jsx";
@@ -8,6 +8,8 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { useAcademy } from "../context/AcademyContext.jsx";
 import AnimatedPage from "../components/AnimatedPage.jsx";
 import NotificationBell from "../components/NotificationBell.jsx";
+import LanguageSelector from "../components/LanguageSelector.jsx";
+import GlobalSearch from "../components/GlobalSearch.jsx";
 
 const pageTitleKeys = {
   "/dashboard": "nav.dashboard",
@@ -28,11 +30,11 @@ export default function DashboardLayout() {
   const { pathname } = useLocation();
   const { storageError } = useLearningProgress();
   const { user, displayName, loading, authError, clearAuthError } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const { cart } = useAcademy();
   const cartCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
   if (loading) {
-    return <div className="min-h-screen bg-[#080d18]" aria-label="Загрузка профиля" />;
+    return <div className="min-h-screen bg-[#080d18]" aria-label={t("common.profileLoading")} />;
   }
   if (!user) return <Navigate to="/login" replace />;
 
@@ -42,7 +44,7 @@ export default function DashboardLayout() {
         <button
           type="button"
           className="sidebar-backdrop fixed inset-0 z-30 bg-black/60 lg:hidden"
-          aria-label="Закрыть меню"
+          aria-label={t("common.close")}
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -82,13 +84,7 @@ export default function DashboardLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              aria-label={t("header.search")}
-              className="rounded-lg border border-white/[0.08] p-2 text-slate-400 transition hover:border-white/[0.16] hover:text-white sm:px-3"
-            >
-              <Search size={16} />
-            </button>
+            <GlobalSearch />
             <Link
               to="/cart"
               aria-label={`${t("header.cart")}: ${cartCount}`}
@@ -101,17 +97,7 @@ export default function DashboardLayout() {
                 </span>
               )}
             </Link>
-            <label className="sr-only" htmlFor="interface-language">{t("language.label")}</label>
-            <select
-              id="interface-language"
-              value={language}
-              onChange={(event) => setLanguage(event.target.value)}
-              className="rounded-lg border border-white/[0.08] bg-[#101827] px-2 py-2 text-[10px] font-semibold text-slate-300 outline-none focus:border-sky-300/40"
-            >
-              <option value="kg">KG</option>
-              <option value="ru">RU</option>
-              <option value="en">EN</option>
-            </select>
+            <LanguageSelector compact />
             <div className="hidden h-8 w-px bg-white/[0.08] sm:block" />
             <div className="hidden text-right sm:block">
               <p className="text-xs font-semibold text-slate-200">
@@ -137,7 +123,7 @@ export default function DashboardLayout() {
             <p className="flex items-center justify-between gap-3 rounded-lg border border-rose-300/20 bg-rose-300/[0.06] px-4 py-3 text-[10px] leading-5 text-rose-200">
               <span>{authError}</span>
               <button type="button" onClick={clearAuthError} className="shrink-0 font-semibold hover:text-white">
-                Закрыть
+                {t("common.close")}
               </button>
             </p>
           </div>

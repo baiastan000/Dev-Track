@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { courses } from "../data/courses.js";
+import { useLanguage } from "./LanguageContext.jsx";
 
 const STORAGE_KEY = "devtrack.learning-progress.v1";
 const LESSON_STAGES = ["theory", "example", "task"];
@@ -141,7 +142,7 @@ function readProgress() {
     console.error("Не удалось загрузить данные DevTrack из localStorage.", error);
     return {
       progress: createInitialProgress(),
-      error: "Не удалось прочитать сохранённые данные. Проверьте localStorage браузера; начато новое учебное пространство.",
+      error: "progress.loadError",
     };
   }
 }
@@ -211,13 +212,14 @@ export function getStudyStreak(activityDays, today = new Date()) {
   return streak;
 }
 
-export function getRecentActivity(activityDays, today = new Date()) {
+export function getRecentActivity(activityDays, today = new Date(), language = "ru") {
+  const locale = language === "kg" ? "ky-KG" : language === "en" ? "en-US" : "ru-RU";
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (6 - index));
     const key = getLocalDateKey(date);
     return {
       date: key,
-      label: new Intl.DateTimeFormat("ru-RU", { weekday: "short" })
+      label: new Intl.DateTimeFormat(locale, { weekday: "short" })
         .format(date)
         .replace(".", ""),
       count: Number(activityDays[key]) || 0,
@@ -227,6 +229,7 @@ export function getRecentActivity(activityDays, today = new Date()) {
 }
 
 export function ProgressProvider({ children }) {
+  const { t } = useLanguage();
   const [initialState] = useState(readProgress);
   const [progress, setProgress] = useState(initialState.progress);
   const [storageError, setStorageError] = useState(initialState.error);
@@ -242,7 +245,7 @@ export function ProgressProvider({ children }) {
       setStorageError("");
     } catch (error) {
       console.error("Не удалось сохранить данные DevTrack в localStorage.", error);
-      setStorageError("Не удалось сохранить изменения. Проверьте доступное место и настройки localStorage браузера.");
+      setStorageError("progress.saveError");
     }
   }, [progress]);
 
@@ -268,7 +271,7 @@ export function ProgressProvider({ children }) {
   const value = useMemo(
     () => ({
       progress,
-      storageError,
+      storageError: storageError ? t(storageError) : "",
       startTopic(topicId) {
         setProgress((current) => {
           if (
@@ -406,7 +409,7 @@ export function ProgressProvider({ children }) {
         }));
       },
     }),
-    [progress, storageError],
+    [progress, storageError, t],
   );
 
   return (

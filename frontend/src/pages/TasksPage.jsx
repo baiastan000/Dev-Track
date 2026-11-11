@@ -4,6 +4,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { courses } from "../data/courses.js";
 import { getNextLessonStage, useLearningProgress } from "../context/ProgressContext.jsx";
 import CodeBlock from "../components/CodeBlock.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
+import PageBackLink from "../components/PageBackLink.jsx";
 
 const assignments = courses.flatMap((course) =>
   course.topics.filter((topic) => topic.task).map((topic) => ({
@@ -25,12 +27,24 @@ function checkAssignment(source, checks) {
   }));
 }
 
+function getTaskTitle(task, topicTitle, t) {
+  const localizedTopicTitle = topicTitle(task.topic);
+  if (task.title.startsWith("Практика: ")) {
+    return `${t("tasks.practicePrefix")}: ${localizedTopicTitle}`;
+  }
+  return task.title.replace(task.topic.title, localizedTopicTitle);
+}
+
 export default function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { progress, saveTaskDraft, completeTask, completeLessonStage } = useLearningProgress();
+  const { t, topicTitle } = useLanguage();
   const requestedTask = searchParams.get("topic");
   const selectedTask = assignments.find((task) => task.id === requestedTask) || assignments[0];
+  const promptKey = `task.${selectedTask.id}.prompt`;
+  const translatedPrompt = t(promptKey);
+  const taskPrompt = translatedPrompt === promptKey ? selectedTask.prompt : translatedPrompt;
   const [result, setResult] = useState(null);
   const [showHints, setShowHints] = useState(false);
   const source = progress.taskDrafts[selectedTask.id] ?? selectedTask.starter;
@@ -89,25 +103,26 @@ export default function TasksPage() {
 
   return (
     <div>
+      <PageBackLink />
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-slate-500">ПРАКТИКА</p>
-          <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-white">Задания</h2>
-          <p className="mt-2 text-xs text-slate-400">Закрепляй темы небольшими практическими упражнениями.</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-slate-500">{t("tasks.eyebrow")}</p>
+          <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-white">{t("tasks.title")}</h2>
+          <p className="mt-2 text-xs text-slate-400">{t("tasks.description")}</p>
         </div>
         <span className="inline-flex items-center gap-2 rounded-lg border border-white/[0.07] bg-[#101827] px-3 py-2.5 text-[11px] text-slate-400">
           <CheckCircle2 size={14} className="text-emerald-300" />
-          <strong className="text-white">{completedCount}</strong> из {assignments.length} выполнено
+          {t("tasks.completedCount").replace("{completed}", String(completedCount)).replace("{total}", String(assignments.length))}
         </span>
       </div>
 
       <div className="grid items-start gap-4 xl:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="rounded-xl border border-white/[0.07] bg-[#101827] p-4">
-          <p className="px-2 pb-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">СПИСОК ЗАДАНИЙ</p>
+          <p className="px-2 pb-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">{t("tasks.list")}</p>
           <div className="space-y-4">
             {courseGroups.map(({ course, tasks }) => (
               <div key={course.id}>
-                <p className="px-2 pb-1.5 text-[10px] font-semibold text-slate-400">{course.title}</p>
+                <p className="px-2 pb-1.5 text-[10px] font-semibold text-slate-400">{t(`course.${course.id}.title`)}</p>
                 <div className="space-y-1">
                   {tasks.map((task, index) => {
                     const active = selectedTask.id === task.id;
@@ -122,7 +137,7 @@ export default function TasksPage() {
                         }`}
                       >
                         {done ? <CheckCircle2 size={14} className="shrink-0 text-emerald-300" /> : <Circle size={13} className="shrink-0 text-slate-600" />}
-                        <span className="min-w-0 flex-1 truncate text-[10px]">{index + 1}. {task.title}</span>
+                        <span className="min-w-0 flex-1 truncate text-[10px]">{index + 1}. {getTaskTitle(task, topicTitle, t)}</span>
                       </button>
                     );
                   })}
@@ -135,31 +150,31 @@ export default function TasksPage() {
         <section className="min-w-0 rounded-xl border border-white/[0.07] bg-[#101827] p-4 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-sky-300">{selectedTask.course.title} · {selectedTask.topic.title}</p>
-              <h3 className="mt-1.5 font-display text-lg font-bold text-white">{selectedTask.title}</h3>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-sky-300">{t(`course.${selectedTask.course.id}.title`)} · {topicTitle(selectedTask.topic)}</p>
+              <h3 className="mt-1.5 font-display text-lg font-bold text-white">{getTaskTitle(selectedTask, topicTitle, t)}</h3>
             </div>
             {progress.completedTasks.includes(selectedTask.id) && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/[0.07] px-2.5 py-1 text-[9px] font-semibold text-emerald-300">
-                <Check size={12} /> Выполнено
+                <Check size={12} /> {t("tasks.completed")}
               </span>
             )}
           </div>
-          <p className="mt-3 text-xs leading-6 text-slate-300">{selectedTask.prompt}</p>
+          <p className="mt-3 text-xs leading-6 text-slate-300">{taskPrompt}</p>
           {!taskUnlocked && (
             <p role="status" className="mt-3 rounded-lg border border-amber-300/15 bg-amber-300/[0.05] px-3 py-2.5 text-[10px] leading-5 text-amber-200">
-              Сначала завершите теорию и пример этого урока.
+              {t("tasks.locked")}
             </p>
           )}
 
           <details className="mt-4 rounded-lg border border-white/[0.06] bg-[#0b111c]">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-[10px] font-semibold text-slate-400">
-              Показать стартовый шаблон <ChevronDown size={13} />
+              {t("tasks.showStarter")} <ChevronDown size={13} />
             </summary>
             <div className="px-3 pb-3"><CodeBlock code={selectedTask.starter} compact /></div>
           </details>
 
           <label className="mt-5 block">
-            <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Твой код</span>
+            <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{t("tasks.yourCode")}</span>
             <textarea
               value={source}
               onChange={(event) => {
@@ -167,7 +182,7 @@ export default function TasksPage() {
                 setResult(null);
               }}
               spellCheck="false"
-              aria-label="Поле для кода"
+              aria-label={t("tasks.codeField")}
               className="min-h-[230px] w-full resize-y rounded-lg border border-white/[0.08] bg-[#080e18] p-4 font-mono text-[11px] leading-6 text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-sky-300/40 focus:ring-2 focus:ring-sky-300/[0.08]"
             />
           </label>
@@ -179,27 +194,27 @@ export default function TasksPage() {
               disabled={!taskUnlocked}
               className="inline-flex items-center gap-2 rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950 transition hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Play size={12} fill="currentColor" /> Проверить
+              <Play size={12} fill="currentColor" /> {t("tasks.check")}
             </button>
             <button
               type="button"
               onClick={resetDraft}
               className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] px-3 py-2.5 text-[10px] font-semibold text-slate-400 transition hover:border-white/20 hover:text-white"
             >
-              <RotateCcw size={12} /> Сбросить шаблон
+              <RotateCcw size={12} /> {t("tasks.reset")}
             </button>
             <button
               type="button"
               onClick={() => setShowHints((open) => !open)}
               className="ml-auto inline-flex items-center gap-1.5 px-2 py-2 text-[10px] font-semibold text-amber-300 hover:text-amber-200"
             >
-              <Lightbulb size={13} /> {showHints ? "Скрыть подсказки" : "Подсказки"}
+              <Lightbulb size={13} /> {showHints ? t("tasks.hideHints") : t("tasks.hints")}
             </button>
           </div>
 
           {showHints && (
             <div className="mt-4 rounded-lg border border-amber-300/10 bg-amber-300/[0.04] p-4">
-              <p className="text-[10px] font-semibold text-amber-200">Попробуй так</p>
+              <p className="text-[10px] font-semibold text-amber-200">{t("tasks.tryThis")}</p>
               <ul className="mt-2 space-y-1.5">
                 {selectedTask.hints.map((hint) => <li key={hint} className="text-[10px] leading-5 text-slate-400">• {hint}</li>)}
               </ul>
@@ -213,7 +228,7 @@ export default function TasksPage() {
               <div className="flex items-center gap-2">
                 {result.passed ? <CheckCircle2 size={16} className="text-emerald-300" /> : <Lightbulb size={15} className="text-amber-300" />}
                 <p className={`text-xs font-semibold ${result.passed ? "text-emerald-200" : "text-amber-200"}`}>
-                  {result.passed ? "Отлично! Все требования задания выполнены." : "Пока не всё готово — проверь подсказки ниже."}
+                  {result.passed ? t("tasks.resultPass") : t("tasks.resultFail")}
                 </p>
               </div>
               <ul className="mt-3 space-y-1.5">
@@ -225,7 +240,7 @@ export default function TasksPage() {
                 ))}
               </ul>
               <p className="mt-3 text-[9px] leading-4 text-slate-500">
-                Автопроверка проверяет наличие обязательных конструкций в коде; она не запускает код в браузере.
+                {t("tasks.autoCheck")}
               </p>
             </div>
           )}
@@ -234,7 +249,7 @@ export default function TasksPage() {
             to={`/courses/${selectedTask.course.id}/topics/${selectedTask.topic.id}`}
             className="mt-5 inline-flex items-center gap-1.5 text-[10px] font-semibold text-sky-300 hover:text-sky-200"
           >
-            Вернуться к теме <ArrowRight size={12} />
+            {t("tasks.backToTopic")} <ArrowRight size={12} />
           </Link>
         </section>
       </div>
