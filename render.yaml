@@ -1,5 +1,20 @@
 services:
   - type: web
+    name: dev-track-web
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_WHATSAPP_PHONE
+        value: "996501306654"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  - type: web
     name: dev-track-api
     runtime: python
     plan: free

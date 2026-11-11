@@ -19,6 +19,10 @@ The Vite development server proxies `/api` requests to `http://127.0.0.1:8000`. 
 
 See [frontend/README.md](./frontend/README.md) for UI and application details.
 
+### Deploying the frontend to Render
+
+The root `render.yaml` Blueprint defines a static site named `dev-track-web`. Apply the Blueprint changes in Render to create or update it; Render builds the Vite app from `frontend/` and publishes `dist/`. The `VITE_WHATSAPP_PHONE` build variable sets the WhatsApp contact number. After the deploy completes, use the `dev-track-web` URL for the updated site.
+
 ## Backend
 
 In a second terminal, from the repository root:

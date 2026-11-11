@@ -43,7 +43,9 @@ Set `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, and `DJANGO_ALLOWED_HOSTS`. Set `DATA
 
 ### Deploying to Render
 
-The repository includes a Render Blueprint in `render.yaml`. In Render, create a **Blueprint** from this repository and apply it. The Blueprint creates the `dev-track-api` web service and a PostgreSQL database, then connects them through `DATABASE_URL`.
+The repository includes a Render Blueprint in `render.yaml`. In Render, create a **Blueprint** from this repository and apply it. The Blueprint creates the `dev-track-web` static frontend, the `dev-track-api` web service, and a PostgreSQL database, then connects the database to the API through `DATABASE_URL`.
+
+The frontend is built from `frontend/` and published as a static site. Its `VITE_WHATSAPP_PHONE` value is compiled into the frontend during deployment; update that environment variable in the Blueprint and redeploy to change the WhatsApp contact number.
 
 If entering the settings manually, use these values with `backend/` as the service root directory:
 
