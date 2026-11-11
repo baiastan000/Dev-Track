@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Payment, WhatsAppOrder
+from .models import CourseOrder, Payment
 
 
 @admin.register(Payment)
@@ -11,8 +11,8 @@ class PaymentAdmin(admin.ModelAdmin):
     readonly_fields = ("idempotency_key", "created_at", "updated_at")
 
 
-@admin.register(WhatsAppOrder)
-class WhatsAppOrderAdmin(admin.ModelAdmin):
+@admin.register(CourseOrder)
+class CourseOrderAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "customer_name",
@@ -22,7 +22,7 @@ class WhatsAppOrderAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_filter = ("notification_status", "created_at")
-    search_fields = ("customer_name", "customer_email", "=id", "whatsapp_message_id")
+    search_fields = ("customer_name", "customer_email", "=id", "telegram_message_id")
     readonly_fields = (
         "id",
         "idempotency_key",
@@ -31,6 +31,6 @@ class WhatsAppOrderAdmin(admin.ModelAdmin):
         "items",
         "total",
         "notification_status",
-        "whatsapp_message_id",
+        "telegram_message_id",
         "created_at",
     )

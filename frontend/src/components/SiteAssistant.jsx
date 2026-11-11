@@ -30,7 +30,7 @@ const assistantCopy = {
       },
       {
         question: "Курс боюнча кантип катталам?",
-        answer: "Курсту себетке кошуп, катталууну ырастасаңыз болот. Заказ серверге сакталат жана WhatsAppка автоматтык жөнөтүлөт. Төлөм азырынча алынбайт.",
+        answer: "Курсту себетке кошуп, катталууну ырастасаңыз болот. Заказ серверге сакталат жана Telegram ботко автоматтык жөнөтүлөт. Төлөм азырынча алынбайт.",
       },
     ],
   },
@@ -60,7 +60,7 @@ const assistantCopy = {
       },
       {
         question: "Как записаться на курс?",
-        answer: "Добавьте курс в корзину и подтвердите заказ. Он сохранится на сервере и автоматически отправится в WhatsApp. Оплата пока не взимается.",
+        answer: "Добавьте курс в корзину и подтвердите заказ. Он сохранится на сервере и автоматически отправится в Telegram-бот. Оплата пока не взимается.",
       },
     ],
   },
@@ -90,7 +90,7 @@ const assistantCopy = {
       },
       {
         question: "How do I enroll in a course?",
-        answer: "Add a course to your cart and confirm the order. It will be saved on the server and sent to WhatsApp automatically. Payment is not collected yet.",
+        answer: "Add a course to your cart and confirm the order. It will be saved on the server and sent to the Telegram bot automatically. Payment is not collected yet.",
       },
     ],
   },

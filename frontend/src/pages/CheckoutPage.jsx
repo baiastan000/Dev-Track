@@ -88,9 +88,9 @@ export default function CheckoutPage() {
           response.status === 429
             ? t("checkout.rateLimited")
             : response.status === 503
-              ? t("checkout.whatsappNotConfigured")
+              ? t("checkout.telegramNotConfigured")
               : response.status === 502
-                ? t("checkout.whatsappFailed")
+                ? t("checkout.telegramFailed")
                 : t("checkout.requestFailed"),
         );
         return;

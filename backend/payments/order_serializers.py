@@ -14,7 +14,7 @@ class OrderItemSerializer(serializers.Serializer):
     )
 
 
-class WhatsAppOrderSerializer(serializers.Serializer):
+class CourseOrderSerializer(serializers.Serializer):
     idempotency_key = serializers.UUIDField()
     customer_name = serializers.CharField(max_length=80, trim_whitespace=True)
     customer_email = serializers.EmailField(max_length=254)

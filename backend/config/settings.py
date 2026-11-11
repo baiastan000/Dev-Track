@@ -2,9 +2,11 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
@@ -114,15 +116,8 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
-WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "")
-WHATSAPP_SENDER_PHONE = os.getenv("WHATSAPP_SENDER_PHONE", "")
-WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
-WHATSAPP_RECIPIENT_PHONE = os.getenv("WHATSAPP_RECIPIENT_PHONE", "")
-WHATSAPP_ORDER_TEMPLATE_NAME = os.getenv(
-    "WHATSAPP_ORDER_TEMPLATE_NAME", "devtrack_new_order"
-)
-WHATSAPP_TEMPLATE_LANGUAGE = os.getenv("WHATSAPP_TEMPLATE_LANGUAGE", "en_US")
-WHATSAPP_API_VERSION = os.getenv("WHATSAPP_API_VERSION", "v25.0")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 EMAIL_BACKEND = os.getenv(
     "DJANGO_EMAIL_BACKEND",

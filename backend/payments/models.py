@@ -64,10 +64,10 @@ class Payment(models.Model):
         return f"{self.student} — {self.amount} {self.currency} ({self.status})"
 
 
-class WhatsAppOrder(models.Model):
+class CourseOrder(models.Model):
     class NotificationStatus(models.TextChoices):
         PENDING = "pending", "Pending"
-        ACCEPTED = "accepted", "Accepted by WhatsApp"
+        ACCEPTED = "accepted", "Accepted by Telegram"
         FAILED = "failed", "Failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -81,7 +81,7 @@ class WhatsAppOrder(models.Model):
         choices=NotificationStatus.choices,
         default=NotificationStatus.PENDING,
     )
-    whatsapp_message_id = models.CharField(max_length=200, blank=True)
+    telegram_message_id = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

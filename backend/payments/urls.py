@@ -1,8 +1,8 @@
 from django.urls import path
 
-from .order_views import WhatsAppOrderCreateView
+from .order_views import CourseOrderCreateView
 
 
 urlpatterns = [
-    path("orders/", WhatsAppOrderCreateView.as_view(), name="whatsapp-order-create"),
+    path("orders/", CourseOrderCreateView.as_view(), name="course-order-create"),
 ]

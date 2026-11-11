@@ -28,20 +28,10 @@ services:
         generateValue: true
       - key: CORS_ALLOWED_ORIGINS
         value: https://dev-track-web.onrender.com
-      - key: WHATSAPP_ACCESS_TOKEN
+      - key: TELEGRAM_BOT_TOKEN
         sync: false
-      - key: WHATSAPP_SENDER_PHONE
+      - key: TELEGRAM_CHAT_ID
         sync: false
-      - key: WHATSAPP_PHONE_NUMBER_ID
-        sync: false
-      - key: WHATSAPP_RECIPIENT_PHONE
-        value: "996501306654"
-      - key: WHATSAPP_ORDER_TEMPLATE_NAME
-        value: devtrack_new_order
-      - key: WHATSAPP_TEMPLATE_LANGUAGE
-        value: en_US
-      - key: WHATSAPP_API_VERSION
-        value: v25.0
       - key: DATABASE_URL
         fromDatabase:
           name: dev-track-db

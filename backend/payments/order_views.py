@@ -5,11 +5,11 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
-from .models import WhatsAppOrder
-from .order_serializers import WhatsAppOrderSerializer
-from .whatsapp import (
-    WhatsAppConfigurationError,
-    WhatsAppDeliveryError,
+from .models import CourseOrder
+from .order_serializers import CourseOrderSerializer
+from .telegram import (
+    TelegramConfigurationError,
+    TelegramDeliveryError,
     send_order_notification,
 )
 
@@ -28,14 +28,14 @@ def _order_response(order):
     }
 
 
-class WhatsAppOrderCreateView(APIView):
+class CourseOrderCreateView(APIView):
     authentication_classes = ()
     permission_classes = (AllowAny,)
     throttle_classes = (ScopedRateThrottle,)
     throttle_scope = "public_orders"
 
     def post(self, request):
-        serializer = WhatsAppOrderSerializer(data=request.data)
+        serializer = CourseOrderSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -54,11 +54,11 @@ class WhatsAppOrderCreateView(APIView):
         }
 
         with transaction.atomic():
-            order, _ = WhatsAppOrder.objects.get_or_create(
+            order, _ = CourseOrder.objects.get_or_create(
                 idempotency_key=values["idempotency_key"],
                 defaults=defaults,
             )
-            order = WhatsAppOrder.objects.select_for_update().get(pk=order.pk)
+            order = CourseOrder.objects.select_for_update().get(pk=order.pk)
             if any(
                 getattr(order, field) != defaults[field]
                 for field in ("customer_name", "customer_email", "items", "total")
@@ -68,36 +68,31 @@ class WhatsAppOrderCreateView(APIView):
                     status=status.HTTP_409_CONFLICT,
                 )
 
-            if order.notification_status == WhatsAppOrder.NotificationStatus.ACCEPTED:
+            if order.notification_status == CourseOrder.NotificationStatus.ACCEPTED:
                 return Response(_order_response(order), status=status.HTTP_200_OK)
 
             try:
                 message_id = send_order_notification(order)
-            except WhatsAppConfigurationError:
+            except TelegramConfigurationError:
                 return Response(
                     {
-                        "detail": (
-                            "The order was saved, but WhatsApp notifications are not configured."
-                        ),
+                        "detail": "The order was saved, but Telegram notifications are not configured.",
                         "order_id": str(order.id),
                     },
                     status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
-            except WhatsAppDeliveryError:
-                order.notification_status = WhatsAppOrder.NotificationStatus.FAILED
+            except TelegramDeliveryError:
+                order.notification_status = CourseOrder.NotificationStatus.FAILED
                 order.save(update_fields=("notification_status",))
                 return Response(
                     {
-                        "detail": (
-                            "The order was saved, but WhatsApp could not confirm delivery. "
-                            "Retry the same order."
-                        ),
+                        "detail": "The order was saved, but Telegram could not confirm delivery. Retry the same order.",
                         "order_id": str(order.id),
                     },
                     status=status.HTTP_502_BAD_GATEWAY,
                 )
 
-            order.notification_status = WhatsAppOrder.NotificationStatus.ACCEPTED
-            order.whatsapp_message_id = message_id
-            order.save(update_fields=("notification_status", "whatsapp_message_id"))
+            order.notification_status = CourseOrder.NotificationStatus.ACCEPTED
+            order.telegram_message_id = message_id
+            order.save(update_fields=("notification_status", "telegram_message_id"))
             return Response(_order_response(order), status=status.HTTP_201_CREATED)
