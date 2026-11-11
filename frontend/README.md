@@ -6,6 +6,10 @@
 
 Из папки `frontend/` запустите приложение командой `npm run dev`. Сейчас авторизация, каталог и корзина работают в демо-режиме через `localStorage`.
 
+## Помощник сайта
+
+Плавающая кнопка DevTrack Assistant доступна на всех страницах и показывает пять готовых вопросов с ответами на кыргызском, русском и английском языках. Это FAQ-помощник с фиксированными ответами, а не подключённая языковая модель; API-ключ не требуется. Тексты находятся в `src/components/SiteAssistant.jsx`.
+
 ## Каталог и запись на курсы
 
 В кабинете доступны каталог курсов (`/courses`), детали курса (`/item/:itemId`), панель управления (`/admin`), корзина (`/cart`) и оформление записи (`/checkout`):
@@ -14,6 +18,7 @@
 - На `/admin` можно добавлять курсы с описанием, категорией, уровнем, длительностью и ценой, а также удалять их. Новые записи видны в каталоге, но для них ещё нужно подготовить учебные материалы.
 - Откройте подробности курса по ссылке на его название или кнопке «Подробнее»; страница `/item/:itemId` показывает описание, параметры и цену и позволяет добавить курс в корзину.
 - Для пробного урока выберите курс, дату не раньше завтрашнего дня и время.
+- Страница оформления отправляет заказ на Django API; API сохраняет его в общей базе и отправляет шаблонное уведомление на настроенный WhatsApp через WhatsApp Cloud API. Оплата пока не проводится.
 - Кнопка записи открывает отдельную страницу `/booking/:courseId`; название курса передаётся через `navigate` и `location.state`. Кнопка отмены возвращает в каталог `/courses`.
 - В корзине можно менять количество курсов (от 1 до 10) и посмотреть общую стоимость.
 - Переключатель KG / RU / EN находится в верхней панели кабинета. Словарь переводит навигацию, каталог и новые формы; существующие учебные материалы пока остаются на русском.
@@ -27,10 +32,10 @@
 - `src/pages/AdminPage.jsx` содержит отдельную демо-панель управления курсами.
 - `src/components/CourseCatalogCard.jsx` показывает курс и открывает страницу записи.
 - `src/pages/BookingPage.jsx` проверяет и сохраняет запись на отдельной странице `/booking/:courseId`.
-- `src/pages/CartPage.jsx` управляет корзиной, а `CheckoutPage.jsx` создаёт подтверждение записи.
+- `src/pages/CartPage.jsx` управляет корзиной, а `CheckoutPage.jsx` отправляет заказ в Django API.
 - `src/pages/AcademyPage.module.css` содержит адаптивную сетку и модульные стили каталога.
 
-Каталог, корзина, заявки, бронирования и выбранный язык сохраняются в `localStorage` этого браузера. Это учебная демонстрация: заказы не отправляются, оплата не проводится, а переключатель демо-панели не является настоящей защитой администратора. Для реального запуска понадобятся сервер, база данных, авторизация ролей и платёжный сервис.
+Каталог, корзина, заявки, бронирования и выбранный язык пока сохраняются в `localStorage` этого браузера. Заказы, оформленные после подключения backend, хранятся в базе данных сервера и отправляются в WhatsApp. Оплата не проводится, а переключатель демо-панели не является настоящей защитой администратора.
 
 ### Аналитика посещаемости курса
 
@@ -71,4 +76,4 @@
 
 ## Backend integration
 
-The Django API is maintained separately in the sibling `backend/` directory. The Vite development server proxies `/api` requests to Django at `http://127.0.0.1:8000`. The current React contexts still use demo/localStorage data; migrating auth, courses, and checkout to the API is a separate integration step. See the repository README and `backend/README.md` for backend setup.
+The Django API is maintained separately in the sibling `backend/` directory. The Vite development server proxies `/api` requests to Django at `http://127.0.0.1:8000`. Authentication, courses, and the cart still use demo/localStorage data; checkout orders are sent to the server API. See the repository README and `backend/README.md` for backend setup.

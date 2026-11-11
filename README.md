@@ -15,13 +15,13 @@ npm ci
 npm run dev
 ```
 
-The Vite development server proxies `/api` requests to `http://127.0.0.1:8000`. The frontend currently uses demo/localStorage data; it is not yet migrated to use the Django API.
+The Vite development server proxies `/api` requests to `http://127.0.0.1:8000`. Authentication, courses, and the cart use demo/localStorage data; checkout orders are sent to the Django API and WhatsApp Cloud API.
 
 See [frontend/README.md](./frontend/README.md) for UI and application details.
 
 ### Deploying the frontend to Render
 
-The root `render.yaml` Blueprint defines a static site named `dev-track-web`. Apply the Blueprint changes in Render to create or update it; Render builds the Vite app from `frontend/` and publishes `dist/`. The `VITE_WHATSAPP_PHONE` build variable sets the WhatsApp contact number. After the deploy completes, use the `dev-track-web` URL for the updated site.
+The root `render.yaml` Blueprint defines a static site named `dev-track-web`. Apply the Blueprint changes in Render to create or update it; Render builds the Vite app from `frontend/` and publishes `dist/`. After the deploy completes, use the `dev-track-web` URL for the updated site. WhatsApp order delivery is configured on the backend, not in frontend build variables.
 
 ## Backend
 

@@ -8,7 +8,25 @@ import PageBackLink from "../components/PageBackLink.jsx";
 import styles from "./AcademyPage.module.css";
 
 const localeTags = { kg: "ky-KG", ru: "ru-KG", en: "en-US" };
-const whatsAppPhone = import.meta.env.VITE_WHATSAPP_PHONE || "996501306654";
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") || "";
+
+function createIdempotencyKey() {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  if (typeof globalThis.crypto?.getRandomValues === "function") {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    bytes.forEach((_, index) => {
+      bytes[index] = Math.floor(Math.random() * 256);
+    });
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 function formatPrice(amount, language) {
   return new Intl.NumberFormat(localeTags[language], {
@@ -21,9 +39,11 @@ function formatPrice(amount, language) {
 export default function CheckoutPage() {
   const { t, language } = useLanguage();
   const { user, displayName } = useAuth();
-  const { catalog, cart, addOrder } = useAcademy();
+  const { catalog, cart, clearCart } = useAcademy();
   const [savedOrder, setSavedOrder] = useState(null);
   const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [idempotencyKey] = useState(createIdempotencyKey);
   const items = Object.entries(cart)
     .map(([courseId, quantity]) => ({
       course: catalog.find((course) => course.id === courseId),
@@ -31,22 +51,9 @@ export default function CheckoutPage() {
     }))
     .filter((item) => item.course);
   const total = items.reduce((sum, item) => sum + item.course.price * item.quantity, 0);
-  const whatsAppText = savedOrder
-    ? [
-        t("checkout.whatsappMessage"),
-        `${t("checkout.name")}: ${savedOrder.customer.name}`,
-        `${t("checkout.email")}: ${savedOrder.customer.email}`,
-        `${t("cart.title")}:`,
-        ...savedOrder.items.map((item) => `${item.title} × ${item.quantity}`),
-        `${t("cart.subtotal")}: ${formatPrice(savedOrder.total, language)}`,
-        `${t("checkout.order")} ${savedOrder.id.slice(-8)}`,
-      ].join("\n")
-    : "";
-  const whatsAppUrl = `https://wa.me/${whatsAppPhone}?text=${encodeURIComponent(whatsAppText)}`;
-
-  function submitOrder(event) {
+  async function submitOrder(event) {
     event.preventDefault();
-    if (!items.length) return;
+    if (!items.length || isSubmitting) return;
     const formData = new FormData(event.currentTarget);
     const name = String(formData.get("name") || "").trim();
     const email = String(formData.get("email") || "").trim();
@@ -54,20 +61,64 @@ export default function CheckoutPage() {
       setFormError(t("form.nameError"));
       return;
     }
-    const order = addOrder({
-      customer: {
-        name,
-        email,
-      },
-      items: items.map(({ course, quantity }) => ({
-        courseId: course.id,
-        title: course.titleOverride || (course.linkedCourseId ? t(`course.${course.linkedCourseId}.title`) : course.title),
-        price: course.price,
-        quantity,
-      })),
-      total,
-    });
-    setSavedOrder(order);
+    setFormError("");
+    setIsSubmitting(true);
+
+    const orderItems = items.map(({ course, quantity }) => ({
+      course_id: course.id,
+      title: course.titleOverride || (course.linkedCourseId ? t(`course.${course.linkedCourseId}.title`) : course.title),
+      unit_price: course.price,
+      quantity,
+    }));
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/orders/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idempotency_key: idempotencyKey,
+          customer_name: name,
+          customer_email: email,
+          items: orderItems,
+        }),
+      });
+
+      if (!response.ok) {
+        setFormError(
+          response.status === 429
+            ? t("checkout.rateLimited")
+            : response.status === 503
+              ? t("checkout.whatsappNotConfigured")
+              : response.status === 502
+                ? t("checkout.whatsappFailed")
+                : t("checkout.requestFailed"),
+        );
+        return;
+      }
+
+      let order;
+      try {
+        order = await response.json();
+      } catch {
+        setFormError(t("checkout.requestFailed"));
+        return;
+      }
+      if (
+        typeof order.id !== "string" ||
+        !Array.isArray(order.items) ||
+        typeof order.total !== "string"
+      ) {
+        setFormError(t("checkout.requestFailed"));
+        return;
+      }
+
+      clearCart();
+      setSavedOrder(order);
+    } catch {
+      setFormError(t("checkout.requestFailed"));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (savedOrder) {
@@ -77,14 +128,6 @@ export default function CheckoutPage() {
         <h2 className="mt-4 font-display text-xl font-extrabold text-white">{t("checkout.success")}</h2>
         <p className="mt-2 text-xs leading-5 text-slate-400">{t("checkout.successNote")}</p>
         <p className="mt-4 text-[10px] text-slate-500">{t("checkout.order")} {savedOrder.id.slice(-8)}</p>
-        <a
-          href={whatsAppUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-6 inline-flex rounded-lg bg-emerald-500 px-4 py-2.5 text-[10px] font-bold text-white transition hover:bg-emerald-400"
-        >
-          {t("checkout.whatsapp")}
-        </a>
         <Link to="/courses" className="mt-6 inline-flex rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950">
           {t("checkout.continue")}
         </Link>
@@ -143,8 +186,8 @@ export default function CheckoutPage() {
             {t("checkout.demoNote")}
           </p>
           {formError && <p role="alert" className="mt-3 text-[10px] text-rose-300">{formError}</p>}
-          <button type="submit" className="mt-5 w-full rounded-lg bg-sky-400 px-4 py-3 text-[10px] font-bold text-slate-950 transition hover:bg-sky-300">
-            {t("checkout.submit")}
+          <button disabled={isSubmitting} type="submit" className="mt-5 w-full rounded-lg bg-sky-400 px-4 py-3 text-[10px] font-bold text-slate-950 transition hover:bg-sky-300 disabled:cursor-wait disabled:opacity-60">
+            {isSubmitting ? t("checkout.sending") : t("checkout.submit")}
           </button>
         </form>
 

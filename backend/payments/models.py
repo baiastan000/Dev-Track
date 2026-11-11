@@ -62,3 +62,30 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.student} — {self.amount} {self.currency} ({self.status})"
+
+
+class WhatsAppOrder(models.Model):
+    class NotificationStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted by WhatsApp"
+        FAILED = "failed", "Failed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    idempotency_key = models.UUIDField(unique=True)
+    customer_name = models.CharField(max_length=80)
+    customer_email = models.EmailField(max_length=254)
+    items = models.JSONField()
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    notification_status = models.CharField(
+        max_length=10,
+        choices=NotificationStatus.choices,
+        default=NotificationStatus.PENDING,
+    )
+    whatsapp_message_id = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"Order {self.pk} — {self.customer_name} ({self.notification_status})"

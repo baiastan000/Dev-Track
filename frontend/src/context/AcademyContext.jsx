@@ -176,6 +176,9 @@ export function AcademyProvider({ children }) {
           return { ...current, cart };
         });
       },
+      clearCart() {
+        setData((current) => ({ ...current, cart: {} }));
+      },
       addBooking(booking) {
         const savedBooking = { ...booking, id: createId("trial"), createdAt: Date.now() };
         setData((current) => ({ ...current, bookings: [savedBooking, ...current.bookings] }));

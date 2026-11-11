@@ -22,6 +22,7 @@ import ItemDetailsPage from "./pages/ItemDetailsPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 import AnimatedPage from "./components/AnimatedPage.jsx";
 import Flashcard from "./components/Flashcard.jsx";
+import SiteAssistant from "./components/SiteAssistant.jsx";
 
 export default function App() {
   return (
@@ -29,28 +30,31 @@ export default function App() {
       <AuthProvider>
         <ProgressProvider>
           <AcademyProvider>
-            <Routes>
-              <Route path="/" element={<AnimatedPage><LandingPage /></AnimatedPage>} />
-              <Route path="/login" element={<AnimatedPage><AuthPage /></AnimatedPage>} />
-              <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/courses" element={<CoursesPage />} />
-                <Route path="/courses/:courseId" element={<CourseDetailPage />} />
-                <Route path="/courses/:courseId/topics/:topicId" element={<TopicPage />} />
-                <Route path="/flashcards" element={<Flashcard />} />
-                <Route path="/item/:itemId" element={<ItemDetailsPage />} />
-                <Route path="/booking/:courseId" element={<BookingPage />} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/tasks" element={<TasksPage />} />
-                <Route path="/plan" element={<LearningPlanPage />} />
-                <Route path="/projects" element={<ProjectsPage />} />
-                <Route path="/statistics" element={<StatisticsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-              </Route>
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <>
+              <Routes>
+                <Route path="/" element={<AnimatedPage><LandingPage /></AnimatedPage>} />
+                <Route path="/login" element={<AnimatedPage><AuthPage /></AnimatedPage>} />
+                <Route element={<DashboardLayout />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/courses" element={<CoursesPage />} />
+                  <Route path="/courses/:courseId" element={<CourseDetailPage />} />
+                  <Route path="/courses/:courseId/topics/:topicId" element={<TopicPage />} />
+                  <Route path="/flashcards" element={<Flashcard />} />
+                  <Route path="/item/:itemId" element={<ItemDetailsPage />} />
+                  <Route path="/booking/:courseId" element={<BookingPage />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/tasks" element={<TasksPage />} />
+                  <Route path="/plan" element={<LearningPlanPage />} />
+                  <Route path="/projects" element={<ProjectsPage />} />
+                  <Route path="/statistics" element={<StatisticsPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                </Route>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+              <SiteAssistant />
+            </>
           </AcademyProvider>
         </ProgressProvider>
       </AuthProvider>
