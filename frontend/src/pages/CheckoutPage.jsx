@@ -8,7 +8,10 @@ import PageBackLink from "../components/PageBackLink.jsx";
 import styles from "./AcademyPage.module.css";
 
 const localeTags = { kg: "ky-KG", ru: "ru-KG", en: "en-US" };
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") || "";
+const apiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD ? "https://dev-track-yptw.onrender.com" : "")
+).replace(/\/+$/, "");
 
 function createIdempotencyKey() {
   if (typeof globalThis.crypto?.randomUUID === "function") {
