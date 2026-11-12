@@ -111,6 +111,10 @@ export default function CheckoutPage() {
         setFormError(t("checkout.requestFailed"));
         return;
       }
+      if (order.notification_status !== "accepted") {
+        setFormError(t("checkout.telegramFailed"));
+        return;
+      }
 
       clearCart();
       setSavedOrder(order);
