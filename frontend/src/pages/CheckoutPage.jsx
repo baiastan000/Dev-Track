@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle2 } from "lucide-react";
 import { useAcademy } from "../context/AcademyContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -57,7 +56,6 @@ export default function CheckoutPage() {
   const { t, language } = useLanguage();
   const { user, displayName } = useAuth();
   const { catalog, cart, clearCart } = useAcademy();
-  const [savedOrder, setSavedOrder] = useState(null);
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [idempotencyKey] = useState(createIdempotencyKey);
@@ -125,34 +123,12 @@ export default function CheckoutPage() {
         return;
       }
       clearCart();
-      setSavedOrder(order);
+      window.location.assign(getWhatsAppUrl(order));
     } catch {
       setFormError(t("checkout.requestFailed"));
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  if (savedOrder) {
-    return (
-      <section className="mx-auto max-w-xl rounded-xl border border-emerald-300/15 bg-[#101827] p-7 text-center">
-        <CheckCircle2 size={38} className="mx-auto text-emerald-300" />
-        <h2 className="mt-4 font-display text-xl font-extrabold text-white">{t("checkout.success")}</h2>
-        <p className="mt-2 text-xs leading-5 text-slate-400">{t("checkout.successNote")}</p>
-        <p className="mt-4 text-[10px] text-slate-500">{t("checkout.order")} {savedOrder.id.slice(-8)}</p>
-        <a
-          href={getWhatsAppUrl(savedOrder)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-6 inline-flex rounded-lg bg-emerald-400 px-4 py-2.5 text-[10px] font-bold text-slate-950"
-        >
-          {t("checkout.sendWhatsApp")}
-        </a>
-        <Link to="/courses" className="mt-6 inline-flex rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950">
-          {t("checkout.continue")}
-        </Link>
-      </section>
-    );
   }
 
   if (!items.length) {
