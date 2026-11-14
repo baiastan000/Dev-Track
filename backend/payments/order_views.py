@@ -7,11 +7,6 @@ from rest_framework.views import APIView
 
 from .models import CourseOrder
 from .order_serializers import CourseOrderSerializer
-from .whatsapp import (
-    WhatsAppConfigurationError,
-    WhatsAppDeliveryError,
-    send_order_notification,
-)
 
 
 def _order_response(order):
@@ -68,30 +63,9 @@ class CourseOrderCreateView(APIView):
                     status=status.HTTP_409_CONFLICT,
                 )
 
-            if order.notification_status == CourseOrder.NotificationStatus.ACCEPTED:
-                return Response(_order_response(order), status=status.HTTP_200_OK)
-
-            try:
-                send_order_notification(order)
-            except WhatsAppConfigurationError:
-                return Response(
-                    {
-                        "detail": "The order was saved, but WhatsApp notifications are not configured.",
-                        "order_id": str(order.id),
-                    },
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                )
-            except WhatsAppDeliveryError:
-                order.notification_status = CourseOrder.NotificationStatus.FAILED
+            if order.notification_status != CourseOrder.NotificationStatus.ACCEPTED:
+                order.notification_status = CourseOrder.NotificationStatus.ACCEPTED
                 order.save(update_fields=("notification_status",))
-                return Response(
-                    {
-                        "detail": "The order was saved, but WhatsApp could not confirm delivery. Retry the same order.",
-                        "order_id": str(order.id),
-                    },
-                    status=status.HTTP_502_BAD_GATEWAY,
-                )
-            order.notification_status = CourseOrder.NotificationStatus.ACCEPTED
-            order.save(update_fields=("notification_status",))
+
             response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
             return Response(_order_response(order), status=response_status)

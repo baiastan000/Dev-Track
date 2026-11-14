@@ -67,7 +67,7 @@ class Payment(models.Model):
 class CourseOrder(models.Model):
     class NotificationStatus(models.TextChoices):
         PENDING = "pending", "Pending"
-        ACCEPTED = "accepted", "Accepted by WhatsApp"
+        ACCEPTED = "accepted", "Order saved"
         FAILED = "failed", "Failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -8,6 +8,7 @@ import PageBackLink from "../components/PageBackLink.jsx";
 import styles from "./AcademyPage.module.css";
 
 const localeTags = { kg: "ky-KG", ru: "ru-KG", en: "en-US" };
+const whatsappNumber = "996501306654";
 const apiBaseUrl = (
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.PROD ? "https://dev-track-yptw.onrender.com" : "")
@@ -37,6 +38,19 @@ function formatPrice(amount, language) {
     currency: "KGS",
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+function getWhatsAppUrl(order) {
+  const courses = order.items
+    .map((item) => `${item.title} x ${item.quantity}`)
+    .join(", ");
+  const message = [
+    `Заказ №${order.id.slice(-8)}`,
+    `Имя: ${order.customer.name}`,
+    `Курсы: ${courses}`,
+    `Сумма: ${order.total} KGS`,
+  ].join("\n");
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
 export default function CheckoutPage() {
@@ -90,11 +104,7 @@ export default function CheckoutPage() {
         setFormError(
           response.status === 429
             ? t("checkout.rateLimited")
-            : response.status === 503
-              ? t("checkout.whatsappNotConfigured")
-              : response.status === 502
-                ? t("checkout.whatsappFailed")
-                : t("checkout.requestFailed"),
+            : t("checkout.requestFailed"),
         );
         return;
       }
@@ -114,10 +124,6 @@ export default function CheckoutPage() {
         setFormError(t("checkout.requestFailed"));
         return;
       }
-      if (order.notification_status !== "accepted") {
-        setFormError(t("checkout.whatsappFailed"));
-        return;
-      }
       clearCart();
       setSavedOrder(order);
     } catch {
@@ -134,6 +140,14 @@ export default function CheckoutPage() {
         <h2 className="mt-4 font-display text-xl font-extrabold text-white">{t("checkout.success")}</h2>
         <p className="mt-2 text-xs leading-5 text-slate-400">{t("checkout.successNote")}</p>
         <p className="mt-4 text-[10px] text-slate-500">{t("checkout.order")} {savedOrder.id.slice(-8)}</p>
+        <a
+          href={getWhatsAppUrl(savedOrder)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 inline-flex rounded-lg bg-emerald-400 px-4 py-2.5 text-[10px] font-bold text-slate-950"
+        >
+          {t("checkout.sendWhatsApp")}
+        </a>
         <Link to="/courses" className="mt-6 inline-flex rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950">
           {t("checkout.continue")}
         </Link>
