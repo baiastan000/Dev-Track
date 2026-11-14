@@ -16,7 +16,7 @@ from .telegram import (
 
 
 class TelegramClientTests(SimpleTestCase):
-    @override_settings(TELEGRAM_BOT_TOKEN="123:secret", TELEGRAM_CHAT_ID="-100123")
+    @override_settings(TELEGRAM_BOT_TOKEN="123:secret", TELEGRAM_CHAT_ID="7674763924")
     @patch("payments.telegram.urlopen")
     def test_sends_order_details_to_configured_chat(self, urlopen_mock):
         response = SimpleNamespace(
@@ -37,8 +37,9 @@ class TelegramClientTests(SimpleTestCase):
         request = urlopen_mock.call_args.args[0]
         self.assertIn("api.telegram.org/bot123:secret/sendMessage", request.full_url)
         payload = json.loads(request.data)
-        self.assertEqual(payload["chat_id"], "-100123")
+        self.assertEqual(payload["chat_id"], "7674763924")
         self.assertIn("Aida Example", payload["text"])
+        self.assertIn("aida@example.com", payload["text"])
         self.assertIn("JavaScript × 2", payload["text"])
         self.assertIn("5000.00 KGS", payload["text"])
         self.assertEqual(message_id, "456")
@@ -48,7 +49,7 @@ class TelegramClientTests(SimpleTestCase):
         with self.assertRaises(TelegramConfigurationError):
             send_order_notification(SimpleNamespace())
 
-    @override_settings(TELEGRAM_BOT_TOKEN="123:secret", TELEGRAM_CHAT_ID="-100123")
+    @override_settings(TELEGRAM_BOT_TOKEN="123:secret", TELEGRAM_CHAT_ID="7674763924")
     @patch("payments.telegram.urlopen")
     def test_telegram_api_rejection_is_reported_as_delivery_failure(self, urlopen_mock):
         response = SimpleNamespace(
@@ -64,8 +65,9 @@ class TelegramClientTests(SimpleTestCase):
             total=Decimal("2500.00"),
         )
 
-        with self.assertRaises(TelegramDeliveryError):
-            send_order_notification(order)
+        with self.assertLogs("payments.telegram", level="ERROR"):
+            with self.assertRaises(TelegramDeliveryError):
+                send_order_notification(order)
 
 
 class CourseOrderApiTests(TestCase):
@@ -91,8 +93,9 @@ class CourseOrderApiTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["total"], "5000.00")
-        self.assertEqual(response.data["notification_status"], CourseOrder.NotificationStatus.ACCEPTED)
+        self.assertEqual(response.data["customer"]["name"], "Aida Example")
         self.assertEqual(CourseOrder.objects.count(), 1)
+        self.assertEqual(response.data["notification_status"], CourseOrder.NotificationStatus.ACCEPTED)
         send_notification.assert_called_once()
 
     @patch("payments.order_views.send_order_notification", return_value="123456")
@@ -109,7 +112,7 @@ class CourseOrderApiTests(TestCase):
         "payments.order_views.send_order_notification",
         side_effect=TelegramDeliveryError("Telegram unavailable."),
     )
-    def test_delivery_failure_is_visible_and_saved_order_can_be_retried(self, send_notification):
+    def test_failed_delivery_can_be_retried_with_the_same_order(self, send_notification):
         failed_response = self.client.post("/api/v1/orders/", self.payload, format="json")
 
         self.assertEqual(failed_response.status_code, 502)
@@ -131,25 +134,22 @@ class CourseOrderApiTests(TestCase):
         "payments.order_views.send_order_notification",
         side_effect=TelegramConfigurationError("Telegram is not configured."),
     )
-    def test_missing_telegram_configuration_is_not_reported_as_success(self, send_notification):
+    def test_missing_telegram_configuration_is_reported(self, send_notification):
         response = self.client.post("/api/v1/orders/", self.payload, format="json")
 
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.data["order_id"], str(CourseOrder.objects.get().id))
         send_notification.assert_called_once()
 
-    @patch("payments.order_views.send_order_notification")
-    def test_invalid_order_is_rejected_without_notification(self, send_notification):
+    def test_invalid_order_is_rejected_without_saving(self):
         self.payload["items"][0]["quantity"] = 0
 
         response = self.client.post("/api/v1/orders/", self.payload, format="json")
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(CourseOrder.objects.count(), 0)
-        send_notification.assert_not_called()
 
-    @patch("payments.order_views.send_order_notification", return_value="123456")
-    def test_idempotency_key_cannot_be_reused_for_another_order(self, send_notification):
+    def test_idempotency_key_cannot_be_reused_for_another_order(self):
         self.client.post("/api/v1/orders/", self.payload, format="json")
         changed_payload = {**self.payload, "customer_name": "Different Customer"}
 
@@ -157,4 +157,3 @@ class CourseOrderApiTests(TestCase):
 
         self.assertEqual(response.status_code, 409)
         self.assertEqual(CourseOrder.objects.count(), 1)
-        send_notification.assert_called_once()

@@ -54,7 +54,7 @@ class CourseOrderCreateView(APIView):
         }
 
         with transaction.atomic():
-            order, _ = CourseOrder.objects.get_or_create(
+            order, created = CourseOrder.objects.get_or_create(
                 idempotency_key=values["idempotency_key"],
                 defaults=defaults,
             )
@@ -95,4 +95,5 @@ class CourseOrderCreateView(APIView):
             order.notification_status = CourseOrder.NotificationStatus.ACCEPTED
             order.telegram_message_id = message_id
             order.save(update_fields=("notification_status", "telegram_message_id"))
-            return Response(_order_response(order), status=status.HTTP_201_CREATED)
+            response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            return Response(_order_response(order), status=response_status)

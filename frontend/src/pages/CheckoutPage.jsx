@@ -118,7 +118,6 @@ export default function CheckoutPage() {
         setFormError(t("checkout.telegramFailed"));
         return;
       }
-
       clearCart();
       setSavedOrder(order);
     } catch {
