@@ -22,7 +22,7 @@ const assistantCopy = {
       },
       {
         question: "Курстар акысызбы?",
-        answer: "Каталогдон курс тууралуу маалыматты жана баасын көрө аласыз. Төлөм алынбайт, ал эми заказ серверге сакталат жана Telegram ботко жөнөтүлөт.",
+        answer: "Каталогдон курс тууралуу маалыматты жана баасын көрө аласыз. Төлөм алынбайт, ал эми заказ серверге сакталат жана WhatsApp аркылуу жөнөтүлөт.",
       },
       {
         question: "Жетишкендиктеримди кайдан көрөм?",
@@ -30,7 +30,7 @@ const assistantCopy = {
       },
       {
         question: "Курс боюнча кантип катталам?",
-        answer: "Курсту себетке кошуп, катталууну ырастасаңыз болот. Заказ серверге сакталат жана Telegram ботко жөнөтүлөт. Төлөм азырынча алынбайт.",
+        answer: "Курсту себетке кошуп, катталууну ырастасаңыз болот. Заказ серверге сакталат жана WhatsApp аркылуу жөнөтүлөт. Төлөм азырынча алынбайт.",
       },
     ],
   },
@@ -52,7 +52,7 @@ const assistantCopy = {
       },
       {
         question: "Курсы бесплатные?",
-        answer: "Информация о курсе и его цене доступна в каталоге. Оплата не взимается, а заказ сохраняется на сервере и отправляется в Telegram-бот.",
+        answer: "Информация о курсе и его цене доступна в каталоге. Оплата не взимается, а заказ сохраняется на сервере и отправляется через WhatsApp.",
       },
       {
         question: "Где посмотреть свой прогресс?",
@@ -60,7 +60,7 @@ const assistantCopy = {
       },
       {
         question: "Как записаться на курс?",
-        answer: "Добавьте курс в корзину и подтвердите заказ. Он сохранится на сервере и отправится в Telegram-бот. Оплата пока не взимается.",
+        answer: "Добавьте курс в корзину и подтвердите заказ. Он сохранится на сервере и отправится через WhatsApp. Оплата пока не взимается.",
       },
     ],
   },
@@ -82,7 +82,7 @@ const assistantCopy = {
       },
       {
         question: "Are the courses free?",
-        answer: "Course details and prices are shown in the catalog. No payment is collected; the order is saved on the server and sent to the Telegram bot.",
+        answer: "Course details and prices are shown in the catalog. No payment is collected; the order is saved on the server and sent through WhatsApp.",
       },
       {
         question: "Where can I see my progress?",
@@ -90,7 +90,7 @@ const assistantCopy = {
       },
       {
         question: "How do I enroll in a course?",
-        answer: "Add a course to your cart and confirm the order. It will be saved on the server and sent to the Telegram bot. Payment is not collected yet.",
+        answer: "Add a course to your cart and confirm the order. It will be saved on the server and sent through WhatsApp. Payment is not collected yet.",
       },
     ],
   },

@@ -22,7 +22,7 @@ class CourseOrderAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_filter = ("notification_status", "created_at")
-    search_fields = ("customer_name", "customer_email", "=id", "telegram_message_id")
+    search_fields = ("customer_name", "customer_email", "=id")
     readonly_fields = (
         "id",
         "idempotency_key",
@@ -31,6 +31,5 @@ class CourseOrderAdmin(admin.ModelAdmin):
         "items",
         "total",
         "notification_status",
-        "telegram_message_id",
         "created_at",
     )

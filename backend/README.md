@@ -46,9 +46,9 @@ Set `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, and `DJANGO_ALLOWED_HOSTS`. Set `DATA
 
 The repository includes a Render Blueprint in `render.yaml`. In Render, create a **Blueprint** from this repository and apply it. The Blueprint creates the `dev-track-web` static frontend, the `dev-track-api` web service, and a PostgreSQL database, then connects the database to the API through `DATABASE_URL`.
 
-The frontend is built from `frontend/` and published as a static site. Orders are stored in the backend database and sent to the configured Telegram chat by the server.
+The frontend is built from `frontend/` and published as a static site. Orders are stored in the backend database and sent to the configured WhatsApp number by the server.
 
-Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in the backend environment. On Render, set the bot token in the `dev-track-api` service's Environment; the Blueprint configures the destination chat ID. For local work, copy `backend/.env.example` to `backend/.env` and set both values. Keep the token secret, never commit it, and rotate it in BotFather if it has been exposed. Start a private chat with the bot and send `/start` before testing.
+WhatsApp notifications use the official Meta WhatsApp Cloud API. Set `WHATSAPP_ACCESS_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID` in the backend environment. The recipient is configured as `WHATSAPP_RECIPIENT_PHONE` in international format (`+996501306654`). Create and get approval for a WhatsApp message template, then set its exact name and language using `WHATSAPP_TEMPLATE_NAME` and `WHATSAPP_TEMPLATE_LANGUAGE`. The configured template must have five body placeholders, in order: order number, customer name, customer email, course list, and total. For example: `New course order #{{1}}. Customer: {{2}} ({{3}}). Courses: {{4}}. Total: {{5}}.` Set `WHATSAPP_GRAPH_API_VERSION` to a supported Meta Graph API version. Apply the same settings locally in `backend/.env` or in the Render `dev-track-api` service Environment. Keep the access token private and never put it in source control or frontend variables. Meta requires customer opt-in and an approved template for business-initiated notifications.
 
 If Render assigns a different service hostname or you use a custom domain, update `VITE_API_BASE_URL` on `dev-track-web` and `CORS_ALLOWED_ORIGINS` on `dev-track-api` to the corresponding API and frontend origins, then redeploy.
 
@@ -58,7 +58,7 @@ If entering the settings manually, use these values with `backend/` as the servi
 
 - **Build Command:** `pip install -r requirements.txt && python manage.py collectstatic --no-input`
 - **Start Command:** `python manage.py migrate --run-syncdb --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
-- **Environment:** `DJANGO_DEBUG=0`, `DJANGO_SECRET_KEY` (generate a secret), and `DATABASE_URL` (the PostgreSQL internal connection string).
+- **Environment:** `DJANGO_DEBUG=0`, `DJANGO_SECRET_KEY` (generate a secret), `DATABASE_URL` (the PostgreSQL internal connection string), `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, and an approved `WHATSAPP_TEMPLATE_NAME`.
 
 The start command applies Django migrations and creates tables for apps that do not yet have migration files. Generate and commit initial migrations before making future model changes. WhiteNoise serves the collected Django admin static files. Render's free PostgreSQL database is temporary and expires after its free period; upgrade it before storing data you need to keep. The service uses Render's generated hostname and HTTPS proxy headers automatically.
 

@@ -67,7 +67,7 @@ class Payment(models.Model):
 class CourseOrder(models.Model):
     class NotificationStatus(models.TextChoices):
         PENDING = "pending", "Pending"
-        ACCEPTED = "accepted", "Accepted by Telegram"
+        ACCEPTED = "accepted", "Accepted by WhatsApp"
         FAILED = "failed", "Failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -81,7 +81,6 @@ class CourseOrder(models.Model):
         choices=NotificationStatus.choices,
         default=NotificationStatus.PENDING,
     )
-    telegram_message_id = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

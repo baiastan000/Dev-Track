@@ -91,9 +91,9 @@ export default function CheckoutPage() {
           response.status === 429
             ? t("checkout.rateLimited")
             : response.status === 503
-              ? t("checkout.telegramNotConfigured")
+              ? t("checkout.whatsappNotConfigured")
               : response.status === 502
-                ? t("checkout.telegramFailed")
+                ? t("checkout.whatsappFailed")
                 : t("checkout.requestFailed"),
         );
         return;
@@ -115,7 +115,7 @@ export default function CheckoutPage() {
         return;
       }
       if (order.notification_status !== "accepted") {
-        setFormError(t("checkout.telegramFailed"));
+        setFormError(t("checkout.whatsappFailed"));
         return;
       }
       clearCart();

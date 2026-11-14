@@ -7,9 +7,9 @@ from rest_framework.views import APIView
 
 from .models import CourseOrder
 from .order_serializers import CourseOrderSerializer
-from .telegram import (
-    TelegramConfigurationError,
-    TelegramDeliveryError,
+from .whatsapp import (
+    WhatsAppConfigurationError,
+    WhatsAppDeliveryError,
     send_order_notification,
 )
 
@@ -72,28 +72,26 @@ class CourseOrderCreateView(APIView):
                 return Response(_order_response(order), status=status.HTTP_200_OK)
 
             try:
-                message_id = send_order_notification(order)
-            except TelegramConfigurationError:
+                send_order_notification(order)
+            except WhatsAppConfigurationError:
                 return Response(
                     {
-                        "detail": "The order was saved, but Telegram notifications are not configured.",
+                        "detail": "The order was saved, but WhatsApp notifications are not configured.",
                         "order_id": str(order.id),
                     },
                     status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
-            except TelegramDeliveryError:
+            except WhatsAppDeliveryError:
                 order.notification_status = CourseOrder.NotificationStatus.FAILED
                 order.save(update_fields=("notification_status",))
                 return Response(
                     {
-                        "detail": "The order was saved, but Telegram could not confirm delivery. Retry the same order.",
+                        "detail": "The order was saved, but WhatsApp could not confirm delivery. Retry the same order.",
                         "order_id": str(order.id),
                     },
                     status=status.HTTP_502_BAD_GATEWAY,
                 )
-
             order.notification_status = CourseOrder.NotificationStatus.ACCEPTED
-            order.telegram_message_id = message_id
-            order.save(update_fields=("notification_status", "telegram_message_id"))
+            order.save(update_fields=("notification_status",))
             response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
             return Response(_order_response(order), status=response_status)

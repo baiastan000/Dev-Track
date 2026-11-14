@@ -8,19 +8,26 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from rest_framework.test import APIClient
 
 from .models import CourseOrder
-from .telegram import (
-    TelegramConfigurationError,
-    TelegramDeliveryError,
+from .whatsapp import (
+    WhatsAppConfigurationError,
+    WhatsAppDeliveryError,
     send_order_notification,
 )
 
 
-class TelegramClientTests(SimpleTestCase):
-    @override_settings(TELEGRAM_BOT_TOKEN="123:secret", TELEGRAM_CHAT_ID="7674763924")
-    @patch("payments.telegram.urlopen")
-    def test_sends_order_details_to_configured_chat(self, urlopen_mock):
+class WhatsAppClientTests(SimpleTestCase):
+    @override_settings(
+        WHATSAPP_ACCESS_TOKEN="test-access-token",
+        WHATSAPP_PHONE_NUMBER_ID="123456",
+        WHATSAPP_RECIPIENT_PHONE="+996501306654",
+        WHATSAPP_TEMPLATE_NAME="course_order_notification",
+        WHATSAPP_TEMPLATE_LANGUAGE="en_US",
+        WHATSAPP_GRAPH_API_VERSION="v26.0",
+    )
+    @patch("payments.whatsapp.urlopen")
+    def test_sends_order_details_using_the_approved_template(self, urlopen_mock):
         response = SimpleNamespace(
-            read=lambda: b'{"ok":true,"result":{"message_id":456}}'
+            read=lambda: b'{"messaging_product":"whatsapp","messages":[{"id":"wamid.456"}]}'
         )
         urlopen_mock.return_value.__enter__.return_value = response
         urlopen_mock.return_value.__exit__.return_value = None
@@ -35,25 +42,46 @@ class TelegramClientTests(SimpleTestCase):
         message_id = send_order_notification(order)
 
         request = urlopen_mock.call_args.args[0]
-        self.assertIn("api.telegram.org/bot123:secret/sendMessage", request.full_url)
+        self.assertEqual(
+            request.full_url,
+            "https://graph.facebook.com/v26.0/123456/messages",
+        )
+        self.assertEqual(request.get_header("Authorization"), "Bearer test-access-token")
         payload = json.loads(request.data)
-        self.assertEqual(payload["chat_id"], "7674763924")
-        self.assertIn("Aida Example", payload["text"])
-        self.assertIn("aida@example.com", payload["text"])
-        self.assertIn("JavaScript × 2", payload["text"])
-        self.assertIn("5000.00 KGS", payload["text"])
-        self.assertEqual(message_id, "456")
+        self.assertEqual(payload["to"], "996501306654")
+        self.assertEqual(payload["template"]["name"], "course_order_notification")
+        parameters = payload["template"]["components"][0]["parameters"]
+        values = [parameter["text"] for parameter in parameters]
+        self.assertIn("Aida Example", values)
+        self.assertIn("aida@example.com", values)
+        self.assertIn("JavaScript x 2", values)
+        self.assertIn("5000.00 KGS", values)
+        self.assertEqual(message_id, "wamid.456")
 
-    @override_settings(TELEGRAM_BOT_TOKEN="", TELEGRAM_CHAT_ID="")
-    def test_missing_bot_credentials_raise_configuration_error(self):
-        with self.assertRaises(TelegramConfigurationError):
+    @override_settings(
+        WHATSAPP_ACCESS_TOKEN="",
+        WHATSAPP_PHONE_NUMBER_ID="",
+        WHATSAPP_RECIPIENT_PHONE="",
+        WHATSAPP_TEMPLATE_NAME="",
+        WHATSAPP_TEMPLATE_LANGUAGE="",
+        WHATSAPP_GRAPH_API_VERSION="v26.0",
+    )
+    def test_missing_credentials_raise_configuration_error(self):
+        with self.assertRaises(WhatsAppConfigurationError):
             send_order_notification(SimpleNamespace())
 
-    @override_settings(TELEGRAM_BOT_TOKEN="123:secret", TELEGRAM_CHAT_ID="7674763924")
-    @patch("payments.telegram.urlopen")
-    def test_telegram_api_rejection_is_reported_as_delivery_failure(self, urlopen_mock):
+    @override_settings(
+        WHATSAPP_ACCESS_TOKEN="test-access-token",
+        WHATSAPP_PHONE_NUMBER_ID="123456",
+        WHATSAPP_RECIPIENT_PHONE="+996501306654",
+        WHATSAPP_TEMPLATE_NAME="course_order_notification",
+        WHATSAPP_TEMPLATE_LANGUAGE="en_US",
+        WHATSAPP_GRAPH_API_VERSION="v26.0",
+    )
+    @patch("payments.whatsapp.urlopen")
+    def test_whatsapp_api_rejection_is_reported_as_delivery_failure(self, urlopen_mock):
         response = SimpleNamespace(
-            read=lambda: b'{"ok":false,"error_code":400}'
+            read=lambda: b'{"error":{"code":132001,"message":"Template not found"}}'
         )
         urlopen_mock.return_value.__enter__.return_value = response
         urlopen_mock.return_value.__exit__.return_value = None
@@ -65,8 +93,8 @@ class TelegramClientTests(SimpleTestCase):
             total=Decimal("2500.00"),
         )
 
-        with self.assertLogs("payments.telegram", level="ERROR"):
-            with self.assertRaises(TelegramDeliveryError):
+        with self.assertLogs("payments.whatsapp", level="ERROR"):
+            with self.assertRaises(WhatsAppDeliveryError):
                 send_order_notification(order)
 
 
@@ -110,7 +138,7 @@ class CourseOrderApiTests(TestCase):
 
     @patch(
         "payments.order_views.send_order_notification",
-        side_effect=TelegramDeliveryError("Telegram unavailable."),
+        side_effect=WhatsAppDeliveryError("WhatsApp unavailable."),
     )
     def test_failed_delivery_can_be_retried_with_the_same_order(self, send_notification):
         failed_response = self.client.post("/api/v1/orders/", self.payload, format="json")
@@ -132,9 +160,9 @@ class CourseOrderApiTests(TestCase):
 
     @patch(
         "payments.order_views.send_order_notification",
-        side_effect=TelegramConfigurationError("Telegram is not configured."),
+        side_effect=WhatsAppConfigurationError("WhatsApp is not configured."),
     )
-    def test_missing_telegram_configuration_is_reported(self, send_notification):
+    def test_missing_whatsapp_configuration_is_reported(self, send_notification):
         response = self.client.post("/api/v1/orders/", self.payload, format="json")
 
         self.assertEqual(response.status_code, 503)
