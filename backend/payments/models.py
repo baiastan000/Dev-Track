@@ -67,7 +67,7 @@ class Payment(models.Model):
 class CourseOrder(models.Model):
     class NotificationStatus(models.TextChoices):
         PENDING = "pending", "Pending"
-        ACCEPTED = "accepted", "Order saved"
+        ACCEPTED = "accepted", "Telegram sent"
         FAILED = "failed", "Failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

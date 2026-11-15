@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from uuid import uuid4
 
 from django.test import TestCase
@@ -9,6 +10,9 @@ from .models import CourseOrder
 class CourseOrderApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        telegram_patcher = patch("payments.order_views.send_order_notification")
+        self.send_telegram = telegram_patcher.start()
+        self.addCleanup(telegram_patcher.stop)
         self.payload = {
             "idempotency_key": str(uuid4()),
             "customer_name": "Aida Example",
@@ -23,6 +27,19 @@ class CourseOrderApiTests(TestCase):
             ],
         }
 
+    def test_render_frontend_can_send_cross_origin_orders(self):
+        frontend_origin = "https://dev-track-web.onrender.com"
+
+        response = self.client.options(
+            "/api/v1/orders/",
+            HTTP_ORIGIN=frontend_origin,
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS="content-type",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Access-Control-Allow-Origin"], frontend_origin)
+
     def test_order_is_saved_by_the_server(self):
         response = self.client.post("/api/v1/orders/", self.payload, format="json")
 
@@ -34,6 +51,7 @@ class CourseOrderApiTests(TestCase):
             CourseOrder.objects.get().notification_status,
             CourseOrder.NotificationStatus.ACCEPTED,
         )
+        self.send_telegram.assert_called_once()
 
     def test_retry_returns_the_existing_order(self):
         first_response = self.client.post("/api/v1/orders/", self.payload, format="json")
@@ -42,6 +60,30 @@ class CourseOrderApiTests(TestCase):
         self.assertEqual(first_response.status_code, 201)
         self.assertEqual(retry_response.status_code, 200)
         self.assertEqual(retry_response.data["id"], first_response.data["id"])
+        self.send_telegram.assert_called_once()
+
+    def test_failed_telegram_notification_can_be_retried(self):
+        from .telegram import TelegramNotificationError
+
+        self.send_telegram.side_effect = [
+            TelegramNotificationError("Telegram could not be reached."),
+            None,
+        ]
+
+        first_response = self.client.post("/api/v1/orders/", self.payload, format="json")
+        self.assertEqual(
+            CourseOrder.objects.get().notification_status,
+            CourseOrder.NotificationStatus.FAILED,
+        )
+        retry_response = self.client.post("/api/v1/orders/", self.payload, format="json")
+
+        self.assertEqual(first_response.status_code, 201)
+        self.assertEqual(retry_response.status_code, 200)
+        self.assertEqual(
+            CourseOrder.objects.get().notification_status,
+            CourseOrder.NotificationStatus.ACCEPTED,
+        )
+        self.assertEqual(self.send_telegram.call_count, 2)
 
     def test_invalid_order_is_rejected_without_saving(self):
         self.payload["items"][0]["quantity"] = 0

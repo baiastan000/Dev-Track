@@ -32,6 +32,10 @@ services:
         fromDatabase:
           name: dev-track-db
           property: connectionString
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
 
 databases:
   - name: dev-track-db

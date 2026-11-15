@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle2, MessageCircle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useAcademy } from "../context/AcademyContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -8,7 +8,6 @@ import PageBackLink from "../components/PageBackLink.jsx";
 import styles from "./AcademyPage.module.css";
 
 const localeTags = { kg: "ky-KG", ru: "ru-KG", en: "en-US" };
-const whatsappNumber = "996501306654";
 const apiBaseUrl = (
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.PROD ? "https://dev-track-yptw.onrender.com" : "")
@@ -38,19 +37,6 @@ function formatPrice(amount, language) {
     currency: "KGS",
     maximumFractionDigits: 0,
   }).format(amount);
-}
-
-function getWhatsAppUrl(order) {
-  const courses = order.items
-    .map((item) => `${item.title} x ${item.quantity}`)
-    .join(", ");
-  const message = [
-    `Заказ №${order.id.slice(-8)}`,
-    `Имя: ${order.customer.name}`,
-    `Курсы: ${courses}`,
-    `Сумма: ${order.total} KGS`,
-  ].join("\n");
-  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
 export default function CheckoutPage() {
@@ -138,15 +124,10 @@ export default function CheckoutPage() {
       <section className="mx-auto max-w-xl rounded-xl border border-emerald-300/15 bg-[#101827] p-7 text-center">
         <CheckCircle2 size={38} className="mx-auto text-emerald-300" />
         <h2 className="mt-4 font-display text-xl font-extrabold text-white">{t("checkout.success")}</h2>
-        <p className="mt-2 text-xs leading-5 text-slate-400">{t("checkout.successNote")}</p>
+        <p className="mt-2 text-xs leading-5 text-slate-400">
+          {t(savedOrder.notification_status === "failed" ? "checkout.telegramFailed" : "checkout.successNote")}
+        </p>
         <p className="mt-4 text-[10px] text-slate-500">{t("checkout.order")} {savedOrder.id.slice(-8)}</p>
-        <a
-          href={getWhatsAppUrl(savedOrder)}
-          className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-emerald-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-emerald-300"
-        >
-          <MessageCircle size={19} aria-hidden="true" />
-          {t("checkout.sendWhatsApp")}
-        </a>
         <Link to="/courses" className="mt-5 inline-flex rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950">
           {t("checkout.continue")}
         </Link>
