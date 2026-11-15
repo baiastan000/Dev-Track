@@ -9,7 +9,8 @@ import {
   signInDemoUser,
   signOutDemoUser,
   updateDemoLastSeen,
-  updateDemoDisplayName,
+  updateDemoProfile,
+  changeDemoPassword,
 } from "../lib/demoAuth.js";
 
 const AuthContext = createContext(null);
@@ -122,13 +123,14 @@ export function AuthProvider({ children }) {
       showAuthError(message) {
         setAuthError(message);
       },
-      async updateDisplayName(value) {
-        const displayName = value.trim();
-        if (!displayName) throw new Error("Введите имя.");
-
+      async updateProfile(displayName, email) {
         if (!session?.user) throw new Error("Войдите в демо-аккаунт.");
-        const user = updateDemoDisplayName(session.user.id, displayName);
+        const user = updateDemoProfile(session.user.id, displayName, email);
         setSession({ user });
+      },
+      async changePassword(currentPassword, newPassword) {
+        if (!session?.user) throw new Error("Войдите в демо-аккаунт.");
+        await changeDemoPassword(session.user.id, currentPassword, newPassword);
       },
       trackActivity(type, details) {
         if (!session?.user) return;

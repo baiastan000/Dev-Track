@@ -8,17 +8,28 @@ import PageBackLink from "../components/PageBackLink.jsx";
 
 export default function SettingsPage() {
   const { progress, setTheme, resetLearningProgress } = useLearningProgress();
-  const { user, displayName, updateDisplayName } = useAuth();
+  const { user, displayName, updateProfile, changePassword } = useAuth();
   const { t } = useLanguage();
   const [profileName, setProfileName] = useState(displayName);
+  const [profileEmail, setProfileEmail] = useState(user?.email || "");
   const [profileMessage, setProfileMessage] = useState("");
   const [profileError, setProfileError] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [resetMessage, setResetMessage] = useState("");
 
   useEffect(() => {
     setProfileName(displayName);
   }, [displayName]);
+
+  useEffect(() => {
+    setProfileEmail(user?.email || "");
+  }, [user?.email]);
 
   useEffect(() => {
     if (!resetMessage) return undefined;
@@ -40,19 +51,47 @@ export default function SettingsPage() {
     setProfileMessage("");
     setProfileError("");
     const nextName = profileName.trim();
+    const nextEmail = profileEmail.trim();
     if (!nextName) {
       setProfileError("settings.nameRequired");
+      return;
+    }
+    if (!nextEmail) {
+      setProfileError("settings.emailRequired");
       return;
     }
 
     setIsSavingProfile(true);
     try {
-      await updateDisplayName(nextName);
+      await updateProfile(nextName, nextEmail);
       setProfileMessage("settings.profileUpdated");
     } catch (error) {
       setProfileError(error.message || "settings.profileUpdateFailed");
     } finally {
       setIsSavingProfile(false);
+    }
+  }
+
+  async function savePassword(event) {
+    event.preventDefault();
+    setPasswordMessage("");
+    setPasswordError("");
+    if (newPassword !== confirmPassword) {
+      setPasswordError("settings.passwordMismatch");
+      return;
+    }
+
+    setIsSavingPassword(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordMessage("settings.passwordUpdated");
+    } catch (error) {
+      setPasswordError(error.message || "settings.passwordUpdateFailed");
+    } finally {
+      setIsSavingPassword(false);
     }
   }
 
@@ -95,9 +134,20 @@ export default function SettingsPage() {
               className="w-full rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 py-3 text-xs text-white outline-none placeholder:text-slate-600 focus:border-sky-300/40"
             />
           </label>
-          <p className="text-[10px] text-slate-500">
-            {t("settings.account")} {user?.email || t("settings.emailUnavailable")}
-          </p>
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("settings.email")}</span>
+            <input
+              type="email"
+              name="email"
+              autoComplete="email"
+              maxLength={254}
+              required
+              value={profileEmail}
+              onChange={(event) => setProfileEmail(event.target.value)}
+              placeholder={t("settings.emailPlaceholder")}
+              className="w-full rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 py-3 text-xs text-white outline-none placeholder:text-slate-600 focus:border-sky-300/40"
+            />
+          </label>
           {profileError && (
             <p role="alert" className="rounded-lg border border-rose-300/20 bg-rose-300/[0.06] px-3 py-2.5 text-[10px] leading-5 text-rose-200">
               {profileError.startsWith("settings.") ? t(profileError) : profileError}
@@ -110,10 +160,76 @@ export default function SettingsPage() {
           )}
           <button
             type="submit"
-            disabled={isSavingProfile || !profileName.trim() || profileName.trim() === displayName}
+            disabled={
+              isSavingProfile ||
+              !profileName.trim() ||
+              !profileEmail.trim() ||
+              (profileName.trim() === displayName && profileEmail.trim().toLowerCase() === user?.email?.toLowerCase())
+            }
             className="rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950 transition hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSavingProfile ? t("settings.saving") : t("settings.saveName")}
+            {isSavingProfile ? t("settings.saving") : t("settings.saveProfile")}
+          </button>
+        </form>
+      </section>
+
+      <section className="mt-4 rounded-xl border border-white/[0.07] bg-[#101827] p-5 sm:p-6">
+        <div className="mb-5">
+          <h3 className="text-sm font-bold text-white">{t("settings.changePassword")}</h3>
+          <p className="mt-1 text-[10px] leading-5 text-slate-500">{t("settings.passwordDescription")}</p>
+        </div>
+        <form onSubmit={savePassword} className="space-y-4">
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("settings.currentPassword")}</span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              className="w-full rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 py-3 text-xs text-white outline-none focus:border-sky-300/40"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("settings.newPassword")}</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              minLength={6}
+              required
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              className="w-full rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 py-3 text-xs text-white outline-none focus:border-sky-300/40"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("settings.confirmPassword")}</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              minLength={6}
+              required
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              className="w-full rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 py-3 text-xs text-white outline-none focus:border-sky-300/40"
+            />
+          </label>
+          {passwordError && (
+            <p role="alert" className="rounded-lg border border-rose-300/20 bg-rose-300/[0.06] px-3 py-2.5 text-[10px] leading-5 text-rose-200">
+              {passwordError.startsWith("settings.") ? t(passwordError) : passwordError}
+            </p>
+          )}
+          {passwordMessage && (
+            <p role="status" className="rounded-lg border border-emerald-300/15 bg-emerald-300/[0.05] px-3 py-2.5 text-[10px] text-emerald-200">
+              {t(passwordMessage)}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={isSavingPassword}
+            className="rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950 transition hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSavingPassword ? t("settings.saving") : t("settings.savePassword")}
           </button>
         </form>
       </section>

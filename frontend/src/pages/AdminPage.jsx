@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { Activity, ArrowLeft, ClipboardCheck, Pencil, Plus, ShieldCheck, Trash2, UsersRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useAcademy } from "../context/AcademyContext.jsx";
@@ -14,7 +14,7 @@ function getCourseTitle(course, t) {
 
 export default function AdminPage() {
   const { t, language } = useLanguage();
-  const { users, activity } = useAuth();
+  const { user, users, activity, loading } = useAuth();
   const { catalog, attendance, addAttendance, addCourse, updateCourse, deleteCourse, storageError } = useAcademy();
   const [formError, setFormError] = useState("");
   const [editingCourse, setEditingCourse] = useState(null);
@@ -188,8 +188,15 @@ export default function AdminPage() {
     return user.isOnline && Number.isFinite(lastSeen) && Date.now() - lastSeen <= 90_000;
   }
 
+  if (loading) {
+    return <div className="min-h-screen bg-[#080d18]" aria-label={t("common.profileLoading")} />;
+  }
+  if (!user) return <Navigate to="/login" replace />;
+
   return (
-    <div>
+    <div className="min-h-screen bg-[#080d18] text-slate-200">
+      <main className="mx-auto w-full max-w-[1440px] px-5 py-7 sm:px-8 sm:py-9">
+      <div>
       <Link to="/courses" className="inline-flex items-center gap-2 text-[11px] font-medium text-slate-400 transition hover:text-white">
         <ArrowLeft size={14} />
         {t("cart.browse")}
@@ -588,6 +595,8 @@ export default function AdminPage() {
           </section>
         </div>
       )}
+      </div>
+      </main>
     </div>
   );
 }

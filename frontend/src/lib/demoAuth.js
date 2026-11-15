@@ -289,20 +289,60 @@ export async function resetDemoPassword(email, password) {
   writeStore({ ...store, users });
 }
 
-export function updateDemoDisplayName(userId, displayName) {
+export function updateDemoProfile(userId, displayName, email) {
   const normalizedName = displayName.trim();
   if (!normalizedName) throw new Error("Введите имя.");
+  const normalizedEmail = normalizeEmail(email);
 
   const store = readStore();
   const userIndex = store.users.findIndex((user) => user.id === userId);
   if (userIndex === -1 || store.sessionUserId !== userId) {
     throw new Error("Не удалось найти текущий демо-аккаунт.");
   }
+  if (
+    store.users.some(
+      (user) => user.id !== userId && user.email.toLocaleLowerCase() === normalizedEmail,
+    )
+  ) {
+    throw new Error("Этот адрес уже зарегистрирован.");
+  }
 
   const users = [...store.users];
-  users[userIndex] = { ...users[userIndex], displayName: normalizedName };
+  users[userIndex] = {
+    ...users[userIndex],
+    displayName: normalizedName,
+    email: normalizedEmail,
+  };
   writeStore({ ...store, users });
   return toPublicUser(users[userIndex]);
+}
+
+export async function changeDemoPassword(userId, currentPassword, newPassword) {
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error("Пароль должен содержать не менее 6 символов.");
+  }
+
+  const store = readStore();
+  const user = store.users.find((item) => item.id === userId);
+  if (!user || store.sessionUserId !== userId) {
+    throw new Error("Не удалось найти текущий демо-аккаунт.");
+  }
+  if ((await hashPassword(currentPassword, user.passwordSalt)) !== user.passwordHash) {
+    throw new Error("Текущий пароль указан неверно.");
+  }
+
+  const passwordSalt = createSalt();
+  const passwordHash = await hashPassword(newPassword, passwordSalt);
+  const users = store.users.map((item) =>
+    item.id === userId
+      ? {
+          ...item,
+          passwordSalt,
+          passwordHash,
+        }
+      : item,
+  );
+  writeStore({ ...store, users });
 }
 
 export function signOutDemoUser() {

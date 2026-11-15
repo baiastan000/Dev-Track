@@ -34,6 +34,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<AnimatedPage><LandingPage /></AnimatedPage>} />
                 <Route path="/login" element={<AnimatedPage><AuthPage /></AnimatedPage>} />
+                <Route path="/admin" element={<AnimatedPage><AdminPage /></AnimatedPage>} />
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/courses" element={<CoursesPage />} />
@@ -42,7 +43,6 @@ export default function App() {
                   <Route path="/flashcards" element={<Flashcard />} />
                   <Route path="/item/:itemId" element={<ItemDetailsPage />} />
                   <Route path="/booking/:courseId" element={<BookingPage />} />
-                  <Route path="/admin" element={<AdminPage />} />
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/tasks" element={<TasksPage />} />
