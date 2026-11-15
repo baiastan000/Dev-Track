@@ -1,4 +1,3 @@
-from unittest.mock import patch
 from uuid import uuid4
 
 from django.test import TestCase
@@ -10,9 +9,6 @@ from .models import CourseOrder
 class CourseOrderApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        telegram_patcher = patch("payments.order_views.send_order_notification")
-        self.send_telegram = telegram_patcher.start()
-        self.addCleanup(telegram_patcher.stop)
         self.payload = {
             "idempotency_key": str(uuid4()),
             "customer_name": "Aida Example",
@@ -47,11 +43,7 @@ class CourseOrderApiTests(TestCase):
         self.assertEqual(response.data["total"], "5000.00")
         self.assertEqual(response.data["customer"]["name"], "Aida Example")
         self.assertEqual(CourseOrder.objects.count(), 1)
-        self.assertEqual(
-            CourseOrder.objects.get().notification_status,
-            CourseOrder.NotificationStatus.ACCEPTED,
-        )
-        self.send_telegram.assert_called_once()
+        self.assertNotIn("notification_status", response.data)
 
     def test_retry_returns_the_existing_order(self):
         first_response = self.client.post("/api/v1/orders/", self.payload, format="json")
@@ -60,30 +52,6 @@ class CourseOrderApiTests(TestCase):
         self.assertEqual(first_response.status_code, 201)
         self.assertEqual(retry_response.status_code, 200)
         self.assertEqual(retry_response.data["id"], first_response.data["id"])
-        self.send_telegram.assert_called_once()
-
-    def test_failed_telegram_notification_can_be_retried(self):
-        from .telegram import TelegramNotificationError
-
-        self.send_telegram.side_effect = [
-            TelegramNotificationError("Telegram could not be reached."),
-            None,
-        ]
-
-        first_response = self.client.post("/api/v1/orders/", self.payload, format="json")
-        self.assertEqual(
-            CourseOrder.objects.get().notification_status,
-            CourseOrder.NotificationStatus.FAILED,
-        )
-        retry_response = self.client.post("/api/v1/orders/", self.payload, format="json")
-
-        self.assertEqual(first_response.status_code, 201)
-        self.assertEqual(retry_response.status_code, 200)
-        self.assertEqual(
-            CourseOrder.objects.get().notification_status,
-            CourseOrder.NotificationStatus.ACCEPTED,
-        )
-        self.assertEqual(self.send_telegram.call_count, 2)
 
     def test_invalid_order_is_rejected_without_saving(self):
         self.payload["items"][0]["quantity"] = 0

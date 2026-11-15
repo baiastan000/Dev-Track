@@ -67,7 +67,7 @@ class Payment(models.Model):
 class CourseOrder(models.Model):
     class NotificationStatus(models.TextChoices):
         PENDING = "pending", "Pending"
-        ACCEPTED = "accepted", "Telegram sent"
+        ACCEPTED = "accepted", "Legacy accepted"
         FAILED = "failed", "Failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -87,4 +87,4 @@ class CourseOrder(models.Model):
         ordering = ("-created_at",)
 
     def __str__(self):
-        return f"Order {self.pk} — {self.customer_name} ({self.notification_status})"
+        return f"Order {self.pk} — {self.customer_name}"

@@ -6,13 +6,16 @@ import {
   Check,
   Code2,
   Layers3,
+  Moon,
   Play,
   Sparkles,
+  Sun,
   Target,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { useAcademy } from "../context/AcademyContext.jsx";
+import { useLearningProgress } from "../context/ProgressContext.jsx";
 import LanguageSelector from "../components/LanguageSelector.jsx";
 
 function ProductPreview({ t }) {
@@ -76,6 +79,7 @@ function ProductPreview({ t }) {
 export default function LandingPage() {
   const { t, language } = useLanguage();
   const { catalog } = useAcademy();
+  const { progress, setTheme } = useLearningProgress();
   const featuredCourses = catalog.slice(0, 3);
   const features = [
     { icon: Target, title: t("public.featureRoute"), description: t("public.featureRouteDescription") },
@@ -101,6 +105,15 @@ export default function LandingPage() {
         </nav>
         <div className="flex items-center gap-3">
           <LanguageSelector compact />
+          <button
+            type="button"
+            aria-label={t(progress.theme === "dark" ? "theme.switchToLight" : "theme.switchToDark")}
+            title={t(progress.theme === "dark" ? "theme.switchToLight" : "theme.switchToDark")}
+            onClick={() => setTheme(progress.theme === "dark" ? "light" : "dark")}
+            className="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.08] bg-[#101827] text-slate-300 transition hover:border-sky-300/30 hover:text-sky-200"
+          >
+            {progress.theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
           <Link
             to="/login?mode=register"
             className="hidden rounded-lg px-3 py-2 text-xs font-semibold text-slate-300 transition hover:text-white sm:inline-flex"

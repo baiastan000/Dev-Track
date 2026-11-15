@@ -1,5 +1,3 @@
-import logging
-
 from django.db import transaction
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -9,10 +7,6 @@ from rest_framework.views import APIView
 
 from .models import CourseOrder
 from .order_serializers import CourseOrderSerializer
-from .telegram import TelegramNotificationError, send_order_notification
-
-
-logger = logging.getLogger(__name__)
 
 
 def _order_response(order):
@@ -25,7 +19,6 @@ def _order_response(order):
         "items": order.items,
         "total": str(order.total),
         "created_at": order.created_at.isoformat(),
-        "notification_status": order.notification_status,
     }
 
 
@@ -70,16 +63,5 @@ class CourseOrderCreateView(APIView):
                 )
 
             response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
-
-        if order.notification_status != CourseOrder.NotificationStatus.ACCEPTED:
-            try:
-                send_order_notification(order)
-            except TelegramNotificationError as error:
-                order.notification_status = CourseOrder.NotificationStatus.FAILED
-                order.save(update_fields=("notification_status",))
-                logger.error("Telegram notification failed for order %s: %s", order.pk, error)
-            else:
-                order.notification_status = CourseOrder.NotificationStatus.ACCEPTED
-                order.save(update_fields=("notification_status",))
 
         return Response(_order_response(order), status=response_status)

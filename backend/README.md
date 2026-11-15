@@ -23,7 +23,7 @@ Create the initial migrations before creating users. `AUTH_USER_MODEL` uses a cu
 
 - `users/` — custom user, profile, registration, session login/logout, and password reset.
 - `courses/` — category, course, module, lesson, enrollment, and lesson-progress models and APIs.
-- `payments/` — payment records and course-order notifications; new orders are listed in Django admin and sent to Telegram when `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are configured. No payment provider is connected.
+- `payments/` — payment records and course orders. Orders are saved in the backend database and listed in Django admin. No payment provider or external notification service is connected.
 - `dashboard/` — authenticated dashboard response varies by user role.
 
 ## API
@@ -46,9 +46,9 @@ Set `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, and `DJANGO_ALLOWED_HOSTS`. Set `DATA
 
 The repository includes a Render Blueprint in `render.yaml`. In Render, create a **Blueprint** from this repository and apply it. The Blueprint creates the `dev-track-web` static frontend, the `dev-track-api` web service, and a PostgreSQL database, then connects the database to the API through `DATABASE_URL`.
 
-The frontend is built from `frontend/` and published as a static site. Orders are stored in the backend database and sent to the configured Telegram chat automatically; checkout does not open WhatsApp.
+The frontend is built from `frontend/` and published as a static site. Orders are stored in the backend database; checkout does not initiate a payment or send an external notification.
 
-New checkout orders are also sent to the configured Telegram chat and appear under **Course orders** in Django admin. Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in the backend environment. Failed Telegram sends are marked on the order in Django admin; select the failed orders and use **Retry failed Telegram notifications** to try again. Checkout records an order request; it does not confirm payment or grant course access.
+New checkout orders appear under **Course orders** in Django admin. In the frontend demo panel, orders are also shown only in the same browser that submitted them. Checkout records an order request; it does not confirm payment or grant course access.
 
 If Render assigns a different service hostname or you use a custom domain, update `VITE_API_BASE_URL` on `dev-track-web` and `CORS_ALLOWED_ORIGINS` on `dev-track-api` to the corresponding API and frontend origins, then redeploy.
 

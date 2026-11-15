@@ -39,10 +39,14 @@ function formatPrice(amount, language) {
   }).format(amount);
 }
 
+function waitForRetry() {
+  return new Promise((resolve) => window.setTimeout(resolve, 2000));
+}
+
 export default function CheckoutPage() {
   const { t, language } = useLanguage();
   const { user, displayName } = useAuth();
-  const { catalog, cart, clearCart } = useAcademy();
+  const { catalog, cart, addOrder } = useAcademy();
   const [savedOrder, setSavedOrder] = useState(null);
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,31 +79,48 @@ export default function CheckoutPage() {
     }));
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/v1/orders/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          idempotency_key: idempotencyKey,
-          customer_name: name,
-          customer_email: email,
-          items: orderItems,
-        }),
+      const requestBody = JSON.stringify({
+        idempotency_key: idempotencyKey,
+        customer_name: name,
+        customer_email: email,
+        items: orderItems,
       });
+      let response;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          response = await fetch(`${apiBaseUrl}/api/v1/orders/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: requestBody,
+          });
+        } catch (error) {
+          if (attempt === 1) throw error;
+          await waitForRetry();
+          continue;
+        }
+
+        if (![502, 503, 504].includes(response.status) || attempt === 1) break;
+        await waitForRetry();
+      }
 
       if (!response.ok) {
-        setFormError(
-          response.status === 429
-            ? t("checkout.rateLimited")
-            : t("checkout.requestFailed"),
-        );
+        if (response.status === 429) {
+          setFormError(t("checkout.rateLimited"));
+        } else {
+          const errorKey = response.status >= 500
+            ? "checkout.serverError"
+            : "checkout.responseError";
+          setFormError(t(errorKey).replace("{status}", String(response.status)));
+        }
         return;
       }
 
       let order;
       try {
         order = await response.json();
-      } catch {
-        setFormError(t("checkout.requestFailed"));
+      } catch (error) {
+        console.error("Could not submit course order.", error);
+        setFormError(t("checkout.connectionError"));
         return;
       }
       if (
@@ -110,7 +131,7 @@ export default function CheckoutPage() {
         setFormError(t("checkout.requestFailed"));
         return;
       }
-      clearCart();
+      addOrder(order);
       setSavedOrder(order);
     } catch {
       setFormError(t("checkout.requestFailed"));
@@ -125,7 +146,7 @@ export default function CheckoutPage() {
         <CheckCircle2 size={38} className="mx-auto text-emerald-300" />
         <h2 className="mt-4 font-display text-xl font-extrabold text-white">{t("checkout.success")}</h2>
         <p className="mt-2 text-xs leading-5 text-slate-400">
-          {t(savedOrder.notification_status === "failed" ? "checkout.telegramFailed" : "checkout.successNote")}
+          {t("checkout.successNote")}
         </p>
         <p className="mt-4 text-[10px] text-slate-500">{t("checkout.order")} {savedOrder.id.slice(-8)}</p>
         <Link to="/courses" className="mt-5 inline-flex rounded-lg bg-sky-400 px-4 py-2.5 text-[10px] font-bold text-slate-950">

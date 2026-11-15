@@ -15,7 +15,7 @@ npm ci
 npm run dev
 ```
 
-The Vite development server proxies `/api` requests to `http://127.0.0.1:8000`. Authentication, courses, and the cart use demo/localStorage data; checkout orders are saved by the Django API. After saving, the checkout page opens a prefilled WhatsApp message to the course owner for the customer to send.
+The Vite development server proxies `/api` requests to `http://127.0.0.1:8000`. Authentication, courses, and the cart use demo/localStorage data; checkout orders are saved by the Django API and shown in the admin panel only in the browser that submitted them. Checkout sends no external notifications.
 
 See [frontend/README.md](./frontend/README.md) for UI and application details.
 

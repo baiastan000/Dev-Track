@@ -197,8 +197,19 @@ export function AcademyProvider({ children }) {
         return savedRecord;
       },
       addOrder(order) {
-        const savedOrder = { ...order, id: createId("enrollment"), createdAt: Date.now() };
-        setData((current) => ({ ...current, orders: [savedOrder, ...current.orders], cart: {} }));
+        const savedOrder = {
+          ...order,
+          id: typeof order.id === "string" ? order.id : createId("enrollment"),
+          createdAt: order.created_at || order.createdAt || Date.now(),
+        };
+        setData((current) => ({
+          ...current,
+          orders: [
+            savedOrder,
+            ...current.orders.filter((item) => item.id !== savedOrder.id),
+          ],
+          cart: {},
+        }));
         return savedOrder;
       },
     }),

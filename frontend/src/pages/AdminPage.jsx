@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { Activity, ArrowLeft, ClipboardCheck, Pencil, Plus, ShieldCheck, Trash2, UsersRound } from "lucide-react";
+import { Activity, ArrowLeft, ClipboardCheck, Pencil, Plus, ShieldCheck, ShoppingCart, Trash2, UsersRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useAcademy } from "../context/AcademyContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -12,10 +12,19 @@ function getCourseTitle(course, t) {
     : course.title);
 }
 
+function formatPrice(amount, language) {
+  const localeTags = { kg: "ky-KG", ru: "ru-KG", en: "en-US" };
+  return new Intl.NumberFormat(localeTags[language], {
+    style: "currency",
+    currency: "KGS",
+    maximumFractionDigits: 0,
+  }).format(Number(amount));
+}
+
 export default function AdminPage() {
   const { t, language } = useLanguage();
   const { user, users, activity, loading } = useAuth();
-  const { catalog, attendance, addAttendance, addCourse, updateCourse, deleteCourse, storageError } = useAcademy();
+  const { catalog, attendance, orders, addAttendance, addCourse, updateCourse, deleteCourse, storageError } = useAcademy();
   const [formError, setFormError] = useState("");
   const [editingCourse, setEditingCourse] = useState(null);
   const [editError, setEditError] = useState("");
@@ -211,6 +220,56 @@ export default function AdminPage() {
       <p className="mb-5 rounded-lg border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3 text-[10px] leading-5 text-amber-200">
         {t("catalog.adminWarning")}
       </p>
+      <section className="mb-7 rounded-xl border border-white/[0.07] bg-[#101827] p-4 sm:p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ShoppingCart size={17} className="text-sky-300" />
+            <div>
+              <h3 className="text-sm font-bold text-white">{t("orders.title")}</h3>
+              <p className="mt-1 text-[10px] text-slate-500">{t("orders.description")}</p>
+            </div>
+          </div>
+          <span className="text-[10px] text-slate-500">{orders.length}</span>
+        </div>
+        {orders.length === 0 ? (
+          <p className="rounded-lg border border-white/[0.06] px-4 py-6 text-center text-xs text-slate-400">
+            {t("orders.empty")}
+          </p>
+        ) : (
+          <div className={styles.attendanceTableWrap}>
+            <table className={styles.attendanceTable}>
+              <thead>
+                <tr>
+                  <th scope="col">{t("orders.customer")}</th>
+                  <th scope="col">{t("orders.courses")}</th>
+                  <th scope="col">{t("orders.total")}</th>
+                  <th scope="col">{t("orders.date")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id}>
+                    <td>
+                      <span className="block font-semibold text-slate-200">{order.customer?.name || order.customer_name}</span>
+                      <span className="mt-1 block text-slate-500">{order.customer?.email || order.customer_email}</span>
+                      <span className="mt-1 block text-[9px] text-slate-600">{t("orders.id")} {order.id.slice(-8)}</span>
+                    </td>
+                    <td>
+                      {(order.items || []).map((item) => (
+                        <span key={`${order.id}-${item.course_id}`} className="block">
+                          {item.title} × {item.quantity}
+                        </span>
+                      ))}
+                    </td>
+                    <td>{formatPrice(order.total, language)}</td>
+                    <td>{formatUserDate(order.created_at || order.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
       {storageError && (
         <p role="alert" className="mb-5 rounded-lg border border-rose-300/20 bg-rose-300/[0.06] px-4 py-3 text-[10px] text-rose-200">
           {storageError}

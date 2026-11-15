@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   Layers3,
   LogOut,
-  ShieldCheck,
   Settings,
 } from "lucide-react";
 import { useLearningProgress } from "../context/ProgressContext.jsx";
@@ -25,7 +24,6 @@ const navigation = [
   { labelKey: "nav.plan", to: "/plan", icon: CalendarDays },
   { labelKey: "nav.projects", to: "/projects", icon: FolderKanban },
   { labelKey: "nav.statistics", to: "/statistics", icon: BarChart3 },
-  { labelKey: "catalog.adminTitle", to: "/admin", icon: ShieldCheck },
 ];
 
 export default function Sidebar({ onNavigate }) {
