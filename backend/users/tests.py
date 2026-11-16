@@ -1,5 +1,6 @@
 import json
 import re
+import smtplib
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -76,6 +77,16 @@ class PasswordResetCodeTests(TestCase):
         self.assertEqual(known_response.status_code, unknown_response.status_code)
         self.assertEqual(known_response.json(), unknown_response.json())
         self.assertEqual(len(mail.outbox), 1)
+
+    @patch("users.views.send_mail", side_effect=smtplib.SMTPException("delivery failed"))
+    def test_email_delivery_failure_returns_a_clear_error(self, _send_mail):
+        response = self.post_json(
+            "/api/v1/auth/password-reset/",
+            {"email": self.user.email},
+        )
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("verification email", response.json()["detail"])
+        self.assertFalse(PasswordResetChallenge.objects.filter(user=self.user).exists())
 
     def test_reset_code_can_only_be_sent_after_cooldown(self):
         self.post_json("/api/v1/auth/password-reset/", {"email": self.user.email})

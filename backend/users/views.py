@@ -1,7 +1,9 @@
-import json
 import hashlib
 import hmac
+import json
+import logging
 import secrets
+import smtplib
 from datetime import timedelta
 
 from django.conf import settings
@@ -13,7 +15,10 @@ from django.contrib.auth import (
     update_session_auth_hash,
 )
 from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.exceptions import (
+    ImproperlyConfigured,
+    ValidationError as DjangoValidationError,
+)
 from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import transaction
@@ -32,6 +37,7 @@ from .serializers import PublicUserSerializer, RegistrationSerializer
 
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 RESET_CODE_TTL = timedelta(minutes=10)
 RESET_TOKEN_TTL = timedelta(minutes=10)
 RESET_CODE_MAX_ATTEMPTS = 5
@@ -137,59 +143,66 @@ def request_password_reset(request):
     if user is None:
         return JsonResponse(RESET_GENERIC_RESPONSE)
 
-    now = timezone.now()
-    with transaction.atomic():
-        challenge = (
-            PasswordResetChallenge.objects.select_for_update()
-            .filter(user=user)
-            .first()
+    try:
+        now = timezone.now()
+        with transaction.atomic():
+            challenge = (
+                PasswordResetChallenge.objects.select_for_update()
+                .filter(user=user)
+                .first()
+            )
+            if challenge is None:
+                challenge = PasswordResetChallenge(user=user)
+
+            window_started_at = challenge.window_started_at
+            if window_started_at is not None and window_started_at > now - RESET_EMAIL_WINDOW:
+                if (
+                    challenge.sent_count >= RESET_EMAIL_MAX_PER_WINDOW
+                    or (
+                        challenge.sent_at is not None
+                        and challenge.sent_at > now - RESET_EMAIL_COOLDOWN
+                    )
+                ):
+                    return JsonResponse(RESET_GENERIC_RESPONSE)
+                sent_count = challenge.sent_count + 1
+            else:
+                window_started_at = now
+                sent_count = 1
+
+            code = f"{secrets.randbelow(1_000_000):06d}"
+            challenge.code_hash = salted_hmac(
+                "users.password_reset_code",
+                f"{user.pk}:{code}",
+                secret=settings.SECRET_KEY,
+                algorithm="sha256",
+            ).hexdigest()
+            challenge.reset_token_hash = ""
+            challenge.expires_at = now + RESET_CODE_TTL
+            challenge.sent_at = now
+            challenge.window_started_at = window_started_at
+            challenge.sent_count = sent_count
+            challenge.failed_attempts = 0
+            challenge.save()
+
+            sent = send_mail(
+                "Your DevTrack password reset code",
+                (
+                    f"Your password reset code is {code}.\n\n"
+                    "The code expires in 10 minutes. If you did not request this, "
+                    "you can ignore this email."
+                ),
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            if sent != 1:
+                raise smtplib.SMTPException("The email backend did not send the message.")
+    except (ImproperlyConfigured, OSError, smtplib.SMTPException):
+        logger.exception("Could not send a password reset email.")
+        return JsonResponse(
+            {"detail": "Could not send the verification email. Please try again later."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
-        if challenge is None:
-            challenge = PasswordResetChallenge(user=user)
-
-        window_started_at = challenge.window_started_at
-        if window_started_at is not None and window_started_at > now - RESET_EMAIL_WINDOW:
-            if (
-                challenge.sent_count >= RESET_EMAIL_MAX_PER_WINDOW
-                or (
-                    challenge.sent_at is not None
-                    and challenge.sent_at > now - RESET_EMAIL_COOLDOWN
-                )
-            ):
-                return JsonResponse(RESET_GENERIC_RESPONSE)
-            sent_count = challenge.sent_count + 1
-        else:
-            window_started_at = now
-            sent_count = 1
-
-        code = f"{secrets.randbelow(1_000_000):06d}"
-        challenge.code_hash = salted_hmac(
-            "users.password_reset_code",
-            f"{user.pk}:{code}",
-            secret=settings.SECRET_KEY,
-            algorithm="sha256",
-        ).hexdigest()
-        challenge.reset_token_hash = ""
-        challenge.expires_at = now + RESET_CODE_TTL
-        challenge.sent_at = now
-        challenge.window_started_at = window_started_at
-        challenge.sent_count = sent_count
-        challenge.failed_attempts = 0
-        challenge.save()
-
-        sent = send_mail(
-            "Your DevTrack password reset code",
-            (
-                f"Your password reset code is {code}.\n\n"
-                "The code expires in 10 minutes. If you did not request this, "
-                "you can ignore this email."
-            ),
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
-        if sent != 1:
-            raise RuntimeError("The password reset email could not be sent.")
 
     return JsonResponse(RESET_GENERIC_RESPONSE)
 

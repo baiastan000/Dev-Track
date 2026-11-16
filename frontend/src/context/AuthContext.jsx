@@ -53,7 +53,7 @@ async function authRequest(path, { method = "GET", body } = {}) {
     if (response.ok) throw new Error("The authentication server returned an invalid response.");
   }
   if (!response.ok) {
-    throw new Error(getErrorMessage(payload, "The authentication request failed."));
+    throw new Error(getErrorMessage(payload, `The authentication request failed (HTTP ${response.status}).`));
   }
   return payload;
 }
