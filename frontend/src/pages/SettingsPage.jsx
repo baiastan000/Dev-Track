@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Moon, Sun } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Eye, EyeOff, Moon, Sun } from "lucide-react";
 import { useLearningProgress } from "../context/ProgressContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -18,6 +18,11 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [visiblePasswords, setVisiblePasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [isSavingPassword, setIsSavingPassword] = useState(false);
@@ -181,38 +186,74 @@ export default function SettingsPage() {
         <form onSubmit={savePassword} className="space-y-4">
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("settings.currentPassword")}</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-              className="w-full rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 py-3 text-xs text-white outline-none focus:border-sky-300/40"
-            />
+            <span className="flex items-center rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 focus-within:border-sky-300/40">
+              <input
+                type={visiblePasswords.current ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                className="w-full bg-transparent py-3 pr-2 text-xs text-white outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setVisiblePasswords((visible) => ({ ...visible, current: !visible.current }))}
+                aria-label={t(visiblePasswords.current ? "common.hidePassword" : "common.showPassword")}
+                aria-pressed={visiblePasswords.current}
+                title={t(visiblePasswords.current ? "common.hidePassword" : "common.showPassword")}
+                className="shrink-0 text-slate-500 transition hover:text-white"
+              >
+                {visiblePasswords.current ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </span>
           </label>
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("settings.newPassword")}</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              minLength={6}
-              required
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              className="w-full rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 py-3 text-xs text-white outline-none focus:border-sky-300/40"
-            />
+            <span className="flex items-center rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 focus-within:border-sky-300/40">
+              <input
+                type={visiblePasswords.new ? "text" : "password"}
+                autoComplete="new-password"
+                minLength={6}
+                required
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                className="w-full bg-transparent py-3 pr-2 text-xs text-white outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setVisiblePasswords((visible) => ({ ...visible, new: !visible.new }))}
+                aria-label={t(visiblePasswords.new ? "common.hidePassword" : "common.showPassword")}
+                aria-pressed={visiblePasswords.new}
+                title={t(visiblePasswords.new ? "common.hidePassword" : "common.showPassword")}
+                className="shrink-0 text-slate-500 transition hover:text-white"
+              >
+                {visiblePasswords.new ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </span>
           </label>
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("settings.confirmPassword")}</span>
-            <input
-              type="password"
-              autoComplete="new-password"
-              minLength={6}
-              required
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              className="w-full rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 py-3 text-xs text-white outline-none focus:border-sky-300/40"
-            />
+            <span className="flex items-center rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 focus-within:border-sky-300/40">
+              <input
+                type={visiblePasswords.confirm ? "text" : "password"}
+                autoComplete="new-password"
+                minLength={6}
+                required
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                className="w-full bg-transparent py-3 pr-2 text-xs text-white outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setVisiblePasswords((visible) => ({ ...visible, confirm: !visible.confirm }))}
+                aria-label={t(visiblePasswords.confirm ? "common.hidePassword" : "common.showPassword")}
+                aria-pressed={visiblePasswords.confirm}
+                title={t(visiblePasswords.confirm ? "common.hidePassword" : "common.showPassword")}
+                className="shrink-0 text-slate-500 transition hover:text-white"
+              >
+                {visiblePasswords.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </span>
           </label>
           {passwordError && (
             <p role="alert" className="rounded-lg border border-rose-300/20 bg-rose-300/[0.06] px-3 py-2.5 text-[10px] leading-5 text-rose-200">

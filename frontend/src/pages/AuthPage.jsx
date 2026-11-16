@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Code2, Mail, LockKeyhole, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, Code2, Eye, EyeOff, Mail, LockKeyhole, UserRound } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
@@ -12,6 +12,7 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,7 +140,7 @@ export default function AuthPage() {
                 <input
                   required
                   autoComplete={isRegister || isResettingPassword ? "new-password" : "current-password"}
-                  type="password"
+                  type={isPasswordVisible ? "text" : "password"}
                   name="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -147,6 +148,16 @@ export default function AuthPage() {
                   placeholder={t("auth.passwordPlaceholder")}
                   className="w-full bg-transparent py-3 text-xs text-white outline-none placeholder:text-slate-600"
                 />
+                <button
+                  type="button"
+                  onClick={() => setIsPasswordVisible((visible) => !visible)}
+                  aria-label={t(isPasswordVisible ? "common.hidePassword" : "common.showPassword")}
+                  aria-pressed={isPasswordVisible}
+                  title={t(isPasswordVisible ? "common.hidePassword" : "common.showPassword")}
+                  className="shrink-0 text-slate-500 transition hover:text-white"
+                >
+                  {isPasswordVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </span>
             </label>
             {!isRegister && !isResettingPassword && (
