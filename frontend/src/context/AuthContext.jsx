@@ -9,8 +9,10 @@ import {
 const AuthContext = createContext(null);
 const AUTH_UPDATE_EVENT = "devtrack:demo-auth-updated";
 const apiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.PROD ? "https://dev-track-yptw.onrender.com" : "")
+  import.meta.env.PROD && window.location.hostname.endsWith(".netlify.app")
+    ? ""
+    : import.meta.env.VITE_API_BASE_URL ||
+      (import.meta.env.PROD ? "https://dev-track-yptw.onrender.com" : "")
 ).replace(/\/+$/, "");
 
 async function getCsrfToken() {
