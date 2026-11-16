@@ -146,7 +146,7 @@ export default function AuthPage() {
                   onChange={(event) => setPassword(event.target.value)}
                   minLength={6}
                   placeholder={t("auth.passwordPlaceholder")}
-                  className="w-full bg-transparent py-3 text-xs text-white outline-none placeholder:text-slate-600"
+                  className="min-w-0 flex-1 bg-transparent py-3 text-xs text-white outline-none placeholder:text-slate-600"
                 />
                 <button
                   type="button"
@@ -154,9 +154,9 @@ export default function AuthPage() {
                   aria-label={t(isPasswordVisible ? "common.hidePassword" : "common.showPassword")}
                   aria-pressed={isPasswordVisible}
                   title={t(isPasswordVisible ? "common.hidePassword" : "common.showPassword")}
-                  className="shrink-0 text-slate-500 transition hover:text-white"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-sky-300"
                 >
-                  {isPasswordVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {isPasswordVisible ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
                 </button>
               </span>
             </label>

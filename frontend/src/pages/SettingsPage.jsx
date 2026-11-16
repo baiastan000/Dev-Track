@@ -193,7 +193,7 @@ export default function SettingsPage() {
                 required
                 value={currentPassword}
                 onChange={(event) => setCurrentPassword(event.target.value)}
-                className="w-full bg-transparent py-3 pr-2 text-xs text-white outline-none"
+                className="min-w-0 flex-1 bg-transparent py-3 pr-2 text-xs text-white outline-none"
               />
               <button
                 type="button"
@@ -201,9 +201,9 @@ export default function SettingsPage() {
                 aria-label={t(visiblePasswords.current ? "common.hidePassword" : "common.showPassword")}
                 aria-pressed={visiblePasswords.current}
                 title={t(visiblePasswords.current ? "common.hidePassword" : "common.showPassword")}
-                className="shrink-0 text-slate-500 transition hover:text-white"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-sky-300"
               >
-                {visiblePasswords.current ? <EyeOff size={16} /> : <Eye size={16} />}
+                {visiblePasswords.current ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
               </button>
             </span>
           </label>
@@ -217,7 +217,7 @@ export default function SettingsPage() {
                 required
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
-                className="w-full bg-transparent py-3 pr-2 text-xs text-white outline-none"
+                className="min-w-0 flex-1 bg-transparent py-3 pr-2 text-xs text-white outline-none"
               />
               <button
                 type="button"
@@ -225,9 +225,9 @@ export default function SettingsPage() {
                 aria-label={t(visiblePasswords.new ? "common.hidePassword" : "common.showPassword")}
                 aria-pressed={visiblePasswords.new}
                 title={t(visiblePasswords.new ? "common.hidePassword" : "common.showPassword")}
-                className="shrink-0 text-slate-500 transition hover:text-white"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-sky-300"
               >
-                {visiblePasswords.new ? <EyeOff size={16} /> : <Eye size={16} />}
+                {visiblePasswords.new ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
               </button>
             </span>
           </label>
@@ -241,7 +241,7 @@ export default function SettingsPage() {
                 required
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                className="w-full bg-transparent py-3 pr-2 text-xs text-white outline-none"
+                className="min-w-0 flex-1 bg-transparent py-3 pr-2 text-xs text-white outline-none"
               />
               <button
                 type="button"
@@ -249,9 +249,9 @@ export default function SettingsPage() {
                 aria-label={t(visiblePasswords.confirm ? "common.hidePassword" : "common.showPassword")}
                 aria-pressed={visiblePasswords.confirm}
                 title={t(visiblePasswords.confirm ? "common.hidePassword" : "common.showPassword")}
-                className="shrink-0 text-slate-500 transition hover:text-white"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-sky-300"
               >
-                {visiblePasswords.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                {visiblePasswords.confirm ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
               </button>
             </span>
           </label>
