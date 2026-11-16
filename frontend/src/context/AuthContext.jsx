@@ -1,22 +1,65 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   getDemoActivity,
-  getDemoSession,
   getDemoUsers,
   recordDemoActivity,
-  registerDemoUser,
-  resetDemoPassword,
-  signInDemoUser,
-  signOutDemoUser,
   updateDemoLastSeen,
-  updateDemoProfile,
-  changeDemoPassword,
 } from "../lib/demoAuth.js";
 
 const AuthContext = createContext(null);
 const AUTH_UPDATE_EVENT = "devtrack:demo-auth-updated";
+const apiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD ? "https://dev-track-yptw.onrender.com" : "")
+).replace(/\/+$/, "");
+
+async function getCsrfToken() {
+  const response = await fetch(`${apiBaseUrl}/api/v1/auth/csrf/`, {
+    credentials: "include",
+  });
+  const payload = await response.json();
+  if (!response.ok || typeof payload.csrfToken !== "string") {
+    throw new Error("Could not initialize a secure authentication request.");
+  }
+  return payload.csrfToken;
+}
+
+function getErrorMessage(payload, fallback) {
+  if (typeof payload?.detail === "string") return payload.detail;
+  for (const value of Object.values(payload || {})) {
+    if (typeof value === "string") return value;
+    if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  }
+  return fallback;
+}
+
+async function authRequest(path, { method = "GET", body } = {}) {
+  const headers = {};
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    headers["X-CSRFToken"] = await getCsrfToken();
+  }
+
+  const response = await fetch(`${apiBaseUrl}/api/v1/auth/${path}`, {
+    method,
+    credentials: "include",
+    headers,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  let payload = {};
+  try {
+    payload = await response.json();
+  } catch (error) {
+    if (response.ok) throw new Error("The authentication server returned an invalid response.");
+  }
+  if (!response.ok) {
+    throw new Error(getErrorMessage(payload, "The authentication request failed."));
+  }
+  return payload;
+}
 
 function getUserDisplayName(user) {
+  if (typeof user?.display_name === "string") return user.display_name.trim();
   const displayName = user?.user_metadata?.display_name;
   return typeof displayName === "string" ? displayName.trim() : "";
 }
@@ -31,13 +74,16 @@ export function AuthProvider({ children }) {
   const lastSeenErrorShown = useRef(false);
 
   useEffect(() => {
+    let active = true;
     function refreshDirectory() {
       try {
-        setUsers(getDemoUsers());
-        setActivity(getDemoActivity());
+        if (active) {
+          setUsers(getDemoUsers());
+          setActivity(getDemoActivity());
+        }
       } catch (error) {
         console.error("Could not load demo user activity.", error);
-        setAuthError(error.message || "Не удалось загрузить список пользователей.");
+        if (active) setAuthError(error.message || "Не удалось загрузить список пользователей.");
       }
     }
 
@@ -49,21 +95,26 @@ export function AuthProvider({ children }) {
 
     window.addEventListener(AUTH_UPDATE_EVENT, refreshDirectory);
     window.addEventListener("storage", handleStorageChange);
-    try {
-      const user = getDemoSession();
-      setSession({ user });
-      if (user && !initialVisitLogged.current) {
-        initialVisitLogged.current = true;
-        recordDemoActivity(user.id, "site_visit");
-      }
-      refreshDirectory();
-      setLoading(false);
-    } catch (error) {
-      setAuthError(error.message || "Не удалось восстановить демо-сессию.");
-      setLoading(false);
-    }
+    authRequest("session/")
+      .then(({ user }) => {
+        if (!active) return;
+        setSession(user ? { user } : null);
+        if (user && !initialVisitLogged.current) {
+          initialVisitLogged.current = true;
+          recordDemoActivity(user.id, "site_visit");
+        }
+        refreshDirectory();
+      })
+      .catch((error) => {
+        console.error("Could not restore the server session.", error);
+        if (active) setAuthError(error.message || "Не удалось восстановить сессию.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
     return () => {
+      active = false;
       window.removeEventListener(AUTH_UPDATE_EVENT, refreshDirectory);
       window.removeEventListener("storage", handleStorageChange);
     };
@@ -105,17 +156,38 @@ export function AuthProvider({ children }) {
       loading,
       authError,
       async register(email, password, displayName) {
-        const user = await registerDemoUser(email, password, displayName);
+        const { user } = await authRequest("register/", {
+          method: "POST",
+          body: { email, display_name: displayName, password },
+        });
         setSession({ user });
         setAuthError("");
       },
       async signIn(email, password) {
-        const user = await signInDemoUser(email, password);
+        const { user } = await authRequest("login/", {
+          method: "POST",
+          body: { email, password },
+        });
         setSession({ user });
         setAuthError("");
       },
-      async resetPassword(email, password) {
-        await resetDemoPassword(email, password);
+      async requestPasswordReset(email) {
+        return authRequest("password-reset/", {
+          method: "POST",
+          body: { email },
+        });
+      },
+      async verifyPasswordResetCode(email, code) {
+        return authRequest("password-reset/verify/", {
+          method: "POST",
+          body: { email, code },
+        });
+      },
+      async resetPassword(resetToken, password) {
+        return authRequest("password-reset/confirm/", {
+          method: "POST",
+          body: { resetToken, password },
+        });
       },
       clearAuthError() {
         setAuthError("");
@@ -124,13 +196,19 @@ export function AuthProvider({ children }) {
         setAuthError(message);
       },
       async updateProfile(displayName, email) {
-        if (!session?.user) throw new Error("Войдите в демо-аккаунт.");
-        const user = updateDemoProfile(session.user.id, displayName, email);
+        if (!session?.user) throw new Error("Войдите в аккаунт.");
+        const { user } = await authRequest("profile/", {
+          method: "POST",
+          body: { display_name: displayName, email },
+        });
         setSession({ user });
       },
       async changePassword(currentPassword, newPassword) {
-        if (!session?.user) throw new Error("Войдите в демо-аккаунт.");
-        await changeDemoPassword(session.user.id, currentPassword, newPassword);
+        if (!session?.user) throw new Error("Войдите в аккаунт.");
+        await authRequest("change-password/", {
+          method: "POST",
+          body: { current_password: currentPassword, new_password: newPassword },
+        });
       },
       trackActivity(type, details) {
         if (!session?.user) return;
@@ -142,7 +220,7 @@ export function AuthProvider({ children }) {
         }
       },
       async signOut() {
-        signOutDemoUser();
+        await authRequest("logout/", { method: "POST", body: {} });
         setSession(null);
       },
     }),

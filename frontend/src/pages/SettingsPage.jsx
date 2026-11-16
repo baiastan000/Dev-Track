@@ -213,7 +213,7 @@ export default function SettingsPage() {
               <input
                 type={visiblePasswords.new ? "text" : "password"}
                 autoComplete="new-password"
-                minLength={6}
+                minLength={8}
                 required
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
@@ -237,7 +237,7 @@ export default function SettingsPage() {
               <input
                 type={visiblePasswords.confirm ? "text" : "password"}
                 autoComplete="new-password"
-                minLength={6}
+                minLength={8}
                 required
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}

@@ -46,3 +46,21 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"Profile: {self.user.email}"
+
+
+class PasswordResetChallenge(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="password_reset_challenge",
+    )
+    code_hash = models.CharField(max_length=64, blank=True)
+    reset_token_hash = models.CharField(max_length=64, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    window_started_at = models.DateTimeField(null=True, blank=True)
+    sent_count = models.PositiveSmallIntegerField(default=0)
+    failed_attempts = models.PositiveSmallIntegerField(default=0)
+
+    def __str__(self):
+        return f"Password reset challenge for {self.user_id}"

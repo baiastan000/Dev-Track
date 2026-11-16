@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
@@ -20,10 +22,12 @@ class PublicUserSerializer(serializers.ModelSerializer):
 class RegistrationSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
+    username = serializers.CharField(required=False)
+    display_name = serializers.CharField(write_only=True, required=False, allow_blank=False)
 
     class Meta:
         model = User
-        fields = ("email", "username", "password")
+        fields = ("email", "username", "password", "display_name")
 
     def validate_password(self, value):
         validate_password(value)
@@ -36,8 +40,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return normalized
 
     def create(self, validated_data):
+        display_name = validated_data.pop("display_name", "").strip()
+        username = validated_data.pop("username", f"user-{uuid.uuid4().hex}")
         return User.objects.create_user(
             email=validated_data["email"],
-            username=validated_data["username"],
+            username=username,
             password=validated_data["password"],
+            first_name=display_name,
         )

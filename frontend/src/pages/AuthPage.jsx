@@ -9,15 +9,29 @@ export default function AuthPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isRegister, setIsRegister] = useState(() => searchParams.get("mode") === "register");
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetStep, setResetStep] = useState("email");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [resetToken, setResetToken] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { user, authError, clearAuthError, register, signIn, resetPassword } = useAuth();
+  const {
+    user,
+    authError,
+    clearAuthError,
+    register,
+    signIn,
+    requestPasswordReset,
+    verifyPasswordResetCode,
+    resetPassword,
+  } = useAuth();
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -33,9 +47,34 @@ export default function AuthPage() {
     setIsSubmitting(true);
     try {
       if (isResettingPassword) {
-        await resetPassword(email, password);
-        setStatusMessage(t("auth.passwordUpdated"));
-        setIsResettingPassword(false);
+        if (resetStep === "email") {
+          await requestPasswordReset(email);
+          setResetStep("code");
+          setStatusMessage(t("auth.codeSent"));
+        } else if (resetStep === "code") {
+          const result = await verifyPasswordResetCode(email, verificationCode.trim());
+          setResetToken(result.resetToken);
+          setResetStep("password");
+          setStatusMessage(t("auth.codeVerified"));
+        } else {
+          if (password !== confirmPassword) {
+            setErrorMessage(t("auth.passwordMismatch"));
+            return;
+          }
+          if (!resetToken) {
+            throw new Error(t("auth.requestFailed"));
+          }
+          await resetPassword(resetToken, password);
+          setStatusMessage(t("auth.passwordUpdated"));
+          setIsResettingPassword(false);
+          setIsRegister(false);
+          setSearchParams({});
+          setResetStep("email");
+          setPassword("");
+          setConfirmPassword("");
+          setVerificationCode("");
+          setResetToken("");
+        }
       } else if (isRegister) {
         const displayName = name.trim();
         if (!displayName) {
@@ -72,16 +111,34 @@ export default function AuthPage() {
               <Code2 size={22} />
             </span>
             <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight">
-              {isResettingPassword ? t("auth.newPassword") : isRegister ? t("auth.createAccount") : t("auth.welcomeBack")}
+              {isResettingPassword
+                ? resetStep === "password"
+                  ? t("auth.newPassword")
+                  : resetStep === "code"
+                    ? t("auth.verifyCode")
+                    : t("auth.resetPassword")
+                : isRegister
+                  ? t("auth.createAccount")
+                  : t("auth.welcomeBack")}
             </h1>
             <p className="mt-2 text-xs text-slate-400">
-              {isResettingPassword ? t("auth.enterEmailNewPassword") : isRegister ? t("auth.startJourney") : t("auth.signInContinue")}
+              {isResettingPassword
+                ? resetStep === "password"
+                  ? t("auth.enterEmailNewPassword")
+                  : resetStep === "code"
+                    ? t("auth.enterVerificationCode")
+                    : t("auth.enterEmailCode")
+                : isRegister
+                  ? t("auth.startJourney")
+                  : t("auth.signInContinue")}
             </p>
           </div>
 
-          <p className="mb-4 rounded-lg border border-sky-300/15 bg-sky-300/[0.05] px-3 py-2.5 text-[10px] leading-5 text-sky-200">
-            {t("auth.demoNote")}
-          </p>
+          {!isResettingPassword && (
+            <p className="mb-4 rounded-lg border border-sky-300/15 bg-sky-300/[0.05] px-3 py-2.5 text-[10px] leading-5 text-sky-200">
+              {t("auth.demoNote")}
+            </p>
+          )}
           {errorMessage && (
             <p role="alert" className="mb-4 rounded-lg border border-rose-300/20 bg-rose-300/[0.06] px-3 py-2.5 text-[10px] leading-5 text-rose-200">
               {errorMessage}
@@ -128,44 +185,110 @@ export default function AuthPage() {
                   name="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
+                  readOnly={isResettingPassword && resetStep !== "email"}
                   placeholder="you@example.com"
-                  className="w-full bg-transparent py-3 text-xs text-white outline-none placeholder:text-slate-600"
+                  className="w-full bg-transparent py-3 text-xs text-white outline-none placeholder:text-slate-600 read-only:opacity-70"
                 />
               </span>
             </label>
-            <label className="block">
-              <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("auth.password")}</span>
-              <span className="input-wrap flex items-center gap-2.5 rounded-lg border border-white/[0.09] bg-[#090f1a] px-3">
-                <LockKeyhole size={15} className="text-slate-500" />
+            {isResettingPassword && resetStep === "code" && (
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("auth.verificationCode")}</span>
                 <input
                   required
-                  autoComplete={isRegister || isResettingPassword ? "new-password" : "current-password"}
-                  type={isPasswordVisible ? "text" : "password"}
-                  name="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  minLength={6}
-                  placeholder={t("auth.passwordPlaceholder")}
-                  className="min-w-0 flex-1 bg-transparent py-3 text-xs text-white outline-none placeholder:text-slate-600"
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  value={verificationCode}
+                  onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="000000"
+                  className="w-full rounded-lg border border-white/[0.09] bg-[#090f1a] px-3 py-3 text-xs tracking-[0.3em] text-white outline-none focus:border-sky-300/40"
                 />
-                <button
-                  type="button"
-                  onClick={() => setIsPasswordVisible((visible) => !visible)}
-                  aria-label={t(isPasswordVisible ? "common.hidePassword" : "common.showPassword")}
-                  aria-pressed={isPasswordVisible}
-                  title={t(isPasswordVisible ? "common.hidePassword" : "common.showPassword")}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-sky-300"
-                >
-                  {isPasswordVisible ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
-                </button>
-              </span>
-            </label>
-            {!isRegister && !isResettingPassword && (
+              </label>
+            )}
+            {(!isResettingPassword || resetStep === "password") && (
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("auth.password")}</span>
+                <span className="input-wrap flex items-center gap-2.5 rounded-lg border border-white/[0.09] bg-[#090f1a] px-3">
+                  <LockKeyhole size={15} className="text-slate-500" />
+                  <input
+                    required
+                    autoComplete={isRegister || isResettingPassword ? "new-password" : "current-password"}
+                    type={isPasswordVisible ? "text" : "password"}
+                    name="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    minLength={8}
+                    placeholder={t("auth.passwordPlaceholder")}
+                    className="min-w-0 flex-1 bg-transparent py-3 text-xs text-white outline-none placeholder:text-slate-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsPasswordVisible((visible) => !visible)}
+                    aria-label={t(isPasswordVisible ? "common.hidePassword" : "common.showPassword")}
+                    aria-pressed={isPasswordVisible}
+                    title={t(isPasswordVisible ? "common.hidePassword" : "common.showPassword")}
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-sky-300"
+                  >
+                    {isPasswordVisible ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                  </button>
+                </span>
+              </label>
+            )}
+            {isResettingPassword && resetStep === "password" && (
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-medium text-slate-300">{t("settings.confirmPassword")}</span>
+                <span className="input-wrap flex items-center gap-2.5 rounded-lg border border-white/[0.09] bg-[#090f1a] px-3">
+                  <LockKeyhole size={15} className="text-slate-500" />
+                  <input
+                    required
+                    autoComplete="new-password"
+                    type={isConfirmPasswordVisible ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    minLength={8}
+                    placeholder={t("auth.passwordPlaceholder")}
+                    className="min-w-0 flex-1 bg-transparent py-3 text-xs text-white outline-none placeholder:text-slate-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmPasswordVisible((visible) => !visible)}
+                    aria-label={t(isConfirmPasswordVisible ? "common.hidePassword" : "common.showPassword")}
+                    aria-pressed={isConfirmPasswordVisible}
+                    title={t(isConfirmPasswordVisible ? "common.hidePassword" : "common.showPassword")}
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-sky-300"
+                  >
+                    {isConfirmPasswordVisible ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                  </button>
+                </span>
+              </label>
+            )}
+            {isResettingPassword && resetStep === "code" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setResetStep("email");
+                  setVerificationCode("");
+                  setStatusMessage("");
+                  setErrorMessage("");
+                }}
+                className="text-[10px] font-medium text-sky-300 hover:text-sky-200"
+              >
+                {t("auth.changeEmail")}
+              </button>
+            )}
+            {!isResettingPassword && (
               <div className="flex justify-end">
                 <button
                   type="button"
                   onClick={() => {
                     setIsResettingPassword(true);
+                    setResetStep("email");
+                    setPassword("");
+                    setConfirmPassword("");
+                    setVerificationCode("");
+                    setResetToken("");
                     setErrorMessage("");
                     setStatusMessage("");
                   }}
@@ -180,7 +303,17 @@ export default function AuthPage() {
               disabled={isSubmitting}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-400 py-3 text-xs font-bold text-slate-950 transition hover:bg-sky-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? t("auth.wait") : isResettingPassword ? t("auth.savePassword") : isRegister ? t("auth.createAccount") : t("auth.signIn")} <ArrowRight size={14} />
+              {isSubmitting
+                ? t("auth.wait")
+                : isResettingPassword
+                  ? resetStep === "email"
+                    ? t("auth.sendCode")
+                    : resetStep === "code"
+                      ? t("auth.verifyCodeAction")
+                      : t("auth.savePassword")
+                  : isRegister
+                    ? t("auth.createAccount")
+                    : t("auth.signIn")} <ArrowRight size={14} />
             </button>
           </form>
 
@@ -191,7 +324,12 @@ export default function AuthPage() {
               onClick={() => {
                 if (isResettingPassword) {
                   setIsResettingPassword(false);
+                  setResetStep("email");
                   setIsRegister(false);
+                  setPassword("");
+                  setConfirmPassword("");
+                  setVerificationCode("");
+                  setResetToken("");
                   setSearchParams({});
                 } else {
                   const nextIsRegister = !isRegister;

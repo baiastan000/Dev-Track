@@ -17,7 +17,7 @@ py manage.py createsuperuser
 py manage.py runserver
 ```
 
-Create the initial migrations before creating users. `AUTH_USER_MODEL` uses a custom email-based user, and switching user models after initial migrations requires a complex data migration. In debug mode, password-reset email and reset links are printed to the backend console.
+Create the initial migrations before creating users. `AUTH_USER_MODEL` uses a custom email-based user, and switching user models after initial migrations requires a complex data migration. In debug mode, password-reset verification codes are printed to the backend console.
 
 ## Apps
 
@@ -33,14 +33,15 @@ Create the initial migrations before creating users. `AUTH_USER_MODEL` uses a cu
 - `POST /api/v1/orders/` — validate and save a course order. Requires a JSON body with `idempotency_key`, `customer_name`, `customer_email`, and `items` (`course_id`, `title`, `quantity`, `unit_price`). Limited to 10 attempts per IP per hour.
 - `GET /api/v1/dashboard/` — student enrollments/progress, instructor course counts, or admin counts; requires login.
 - `GET /api/v1/auth/csrf/` — initialize the CSRF cookie/token.
-- `POST /api/v1/auth/register/`, `/login/`, `/logout/`, `/password-reset/` — JSON session-auth endpoints. POST requests require the `csrftoken` cookie in `X-CSRFToken` and browser credentials.
-- Password reset confirmation uses the emailed `/api/v1/auth/password-reset/confirm/<uid>/<token>/` link.
+- `GET /api/v1/auth/session/` — current session user, or `null` when signed out.
+- `POST /api/v1/auth/register/`, `/login/`, `/logout/`, `/profile/`, `/change-password/` — JSON session-auth endpoints. POST requests require the `csrftoken` cookie in `X-CSRFToken` and browser credentials.
+- `POST /api/v1/auth/password-reset/` sends a six-digit email code; `/password-reset/verify/` validates it and returns a short-lived reset token; `/password-reset/confirm/` accepts that token and the new password. Codes expire after 10 minutes, are limited to five verification attempts, and requests are limited to three per hour with a one-minute resend cooldown.
 
 During local development, start the frontend from `frontend/` with `npm run dev`; Vite proxies `/api` to Django on port 8000.
 
 ## Production
 
-Set `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, and `DJANGO_ALLOWED_HOSTS`. Set `DATABASE_URL` to PostgreSQL, configure SMTP using the `DJANGO_EMAIL_*` variables, terminate TLS, and proxy `/api/` to Django on the same site. Then run `py manage.py collectstatic`. Production HTTPS and secure-cookie flags are enabled when debug is off. Add rate limiting for login, registration, and password reset at the reverse proxy.
+Set `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, and `DJANGO_ALLOWED_HOSTS`. Set `DATABASE_URL` to PostgreSQL, configure working SMTP credentials using the `DJANGO_EMAIL_*` variables, set the frontend origin in `CORS_ALLOWED_ORIGINS`, terminate TLS, and proxy `/api/` to Django on the same site. `DJANGO_SESSION_COOKIE_SAMESITE` and `DJANGO_CSRF_COOKIE_SAMESITE` default to `None` in production to support a separate frontend domain; secure cookies are enabled when debug is off. Then run `py manage.py collectstatic`. Add rate limiting for login, registration, and password reset at the reverse proxy.
 
 ### Deploying to Render
 

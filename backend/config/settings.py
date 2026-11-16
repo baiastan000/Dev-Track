@@ -118,6 +118,16 @@ CORS_ALLOWED_ORIGINS = [
         if origin.strip()
     ],
 ]
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [
+    *CORS_ALLOWED_ORIGINS,
+    "https://*.netlify.app",
+    *(
+        ["http://localhost:5173", "http://127.0.0.1:5173"]
+        if DEBUG
+        else []
+    ),
+]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://([a-z0-9-]+\.)*netlify\.app$",
 ]
@@ -135,8 +145,14 @@ EMAIL_HOST_PASSWORD = os.getenv("DJANGO_EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("DJANGO_EMAIL_USE_TLS", "1") == "1"
 DEFAULT_FROM_EMAIL = os.getenv("DJANGO_DEFAULT_FROM_EMAIL", "noreply@devtrack.local")
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Lax"
-CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = os.getenv(
+    "DJANGO_SESSION_COOKIE_SAMESITE",
+    "Lax" if DEBUG else "None",
+)
+CSRF_COOKIE_SAMESITE = os.getenv(
+    "DJANGO_CSRF_COOKIE_SAMESITE",
+    "Lax" if DEBUG else "None",
+)
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 

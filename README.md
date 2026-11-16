@@ -15,7 +15,7 @@ npm ci
 npm run dev
 ```
 
-The Vite development server proxies `/api` requests to `http://127.0.0.1:8000`. Authentication, courses, and the cart use demo/localStorage data; checkout orders are saved by the Django API and shown in the admin panel only in the browser that submitted them. Checkout sends no external notifications.
+The Vite development server proxies `/api` requests to `http://127.0.0.1:8000`. Registration, login, profile updates, and password recovery use Django sessions and the backend database. Course progress and the cart remain in browser storage; checkout orders are saved by the Django API.
 
 See [frontend/README.md](./frontend/README.md) for UI and application details.
 
@@ -42,7 +42,7 @@ Run backend checks and tests from `backend/`:
 
 ```powershell
 py manage.py check
-py manage.py test courses
+py manage.py test users courses
 ```
 
 See [backend/README.md](./backend/README.md) for API routes, security settings, and production configuration.
