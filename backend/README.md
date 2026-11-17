@@ -41,11 +41,13 @@ During local development, start the frontend from `frontend/` with `npm run dev`
 
 ## Production
 
-Set `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, and `DJANGO_ALLOWED_HOSTS`. Set `DATABASE_URL` to PostgreSQL, configure working SMTP credentials using the `DJANGO_EMAIL_*` variables, set the frontend origin in `CORS_ALLOWED_ORIGINS`, terminate TLS, and proxy `/api/` to Django on the same site. `DJANGO_SESSION_COOKIE_SAMESITE` and `DJANGO_CSRF_COOKIE_SAMESITE` default to `None` in production to support a separate frontend domain; secure cookies are enabled when debug is off. Then run `py manage.py collectstatic`. Add rate limiting for login, registration, and password reset at the reverse proxy.
+Set `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=0`, and `DJANGO_ALLOWED_HOSTS`. Set `DATABASE_URL` to PostgreSQL, configure working SMTP credentials (`DJANGO_EMAIL_HOST`, `DJANGO_EMAIL_HOST_USER`, `DJANGO_EMAIL_HOST_PASSWORD`, and `DJANGO_DEFAULT_FROM_EMAIL`; the default port is 587 with TLS enabled), set the frontend origin in `CORS_ALLOWED_ORIGINS`, terminate TLS, and proxy `/api/` to Django on the same site. `DJANGO_SESSION_COOKIE_SAMESITE` and `DJANGO_CSRF_COOKIE_SAMESITE` default to `None` in production to support a separate frontend domain; secure cookies are enabled when debug is off. Then run `py manage.py collectstatic`. Add rate limiting for login, registration, and password reset at the reverse proxy.
 
 ### Deploying to Render
 
 The repository includes a Render Blueprint in `render.yaml`. In Render, create a **Blueprint** from this repository and apply it. The Blueprint creates the `dev-track-web` static frontend, the `dev-track-api` web service, and a PostgreSQL database, then connects the database to the API through `DATABASE_URL`.
+
+When applying the Blueprint, provide `DJANGO_EMAIL_HOST`, `DJANGO_EMAIL_HOST_USER`, `DJANGO_EMAIL_HOST_PASSWORD`, and `DJANGO_DEFAULT_FROM_EMAIL` for the API service. Use SMTP credentials from your email provider (for Gmail, use an app password, not your account password). Without working SMTP settings, password-reset emails cannot be delivered. In local debug mode, email is printed in the backend console instead of being sent.
 
 The frontend is built from `frontend/` and published as a static site. Orders are stored in the backend database; checkout does not initiate a payment or send an external notification.
 

@@ -32,6 +32,18 @@ services:
         fromDatabase:
           name: dev-track-db
           property: connectionString
+      - key: DJANGO_EMAIL_HOST
+        sync: false
+      - key: DJANGO_EMAIL_HOST_USER
+        sync: false
+      - key: DJANGO_EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DJANGO_DEFAULT_FROM_EMAIL
+        sync: false
+      - key: DJANGO_EMAIL_PORT
+        value: "587"
+      - key: DJANGO_EMAIL_USE_TLS
+        value: "1"
 databases:
   - name: dev-track-db
     databaseName: devtrack
