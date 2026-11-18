@@ -105,7 +105,17 @@ def sign_in(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    user = authenticate(request, username=email.strip().lower(), password=password)
+    email = email.strip()
+    stored_email = (
+        User.objects.filter(email__iexact=email)
+        .values_list("email", flat=True)
+        .first()
+    )
+    user = authenticate(
+        request,
+        username=stored_email or email.lower(),
+        password=password,
+    )
     if user is None:
         return JsonResponse(
             {"detail": "Email or password is incorrect."},
